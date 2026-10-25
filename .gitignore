@@ -1,0 +1,5 @@
+# Raw Spotify export: personal data, never committed (constitution, principle V)
+data/
+
+# Local Claude Code settings and credentials
+.claude/settings.local.json
