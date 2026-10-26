@@ -54,6 +54,7 @@ DOC_NETWORKS = [
     ipaddress.ip_network("192.0.2.0/24"),
     ipaddress.ip_network("198.51.100.0/24"),
     ipaddress.ip_network("203.0.113.0/24"),
+    ipaddress.ip_network("2001:db8::/32"),
 ]
 RECORDS_ERROR = "error: --records must be between 100 and 10000000"
 DATA_ERROR = "error: refusing to write sample data into data/"
@@ -115,9 +116,13 @@ def test_exactly_one_descriptor_group_per_record(dataset):
         assert len(groups_filled(record)) == 1, record
 
 
-def test_content_types_are_split_across_files(dataset):
-    assert {groups_filled(r)[0] for r in dataset["audio"]} == {"music", "audiobook"}
-    assert {groups_filled(r)[0] for r in dataset["video"]} == {"podcast"}
+def test_content_type_does_not_follow_the_file_name(dataset):
+    """As in the real export: episodes also sit in the audio file, music also in the video file."""
+    audio_types = {groups_filled(r)[0] for r in dataset["audio"]}
+    video_types = {groups_filled(r)[0] for r in dataset["video"]}
+    assert {"music", "podcast"} <= audio_types
+    assert {"music", "podcast"} <= video_types
+    assert "audiobook" not in video_types
 
 
 def test_value_rules(dataset):
@@ -136,6 +141,19 @@ def test_ip_addresses_are_in_reserved_documentation_ranges(dataset):
     for record in dataset["all"]:
         address = ipaddress.ip_address(record["ip_addr"])
         assert any(address in network for network in DOC_NETWORKS), record["ip_addr"]
+
+
+def test_both_ipv4_and_ipv6_addresses_occur(dataset):
+    versions = {ipaddress.ip_address(r["ip_addr"]).version for r in dataset["all"]}
+    assert versions == {4, 6}
+    assert sum(1 for r in dataset["all"] if ipaddress.ip_address(r["ip_addr"]).version == 6) >= 2
+
+
+def test_empty_show_names_are_kept_apart_from_null(dataset):
+    """The real export has empty strings, not only nulls, in episode_show_name."""
+    for key in ("audio", "video"):
+        assert any(r["episode_show_name"] == "" for r in dataset[key]), key
+    assert not any(r["episode_name"] == "" for r in dataset["all"])
 
 
 def test_uri_shapes(dataset):

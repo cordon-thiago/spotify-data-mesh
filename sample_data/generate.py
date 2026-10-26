@@ -58,6 +58,9 @@ LISBON = ZoneInfo("Europe/Lisbon")
 
 # RFC 5737 documentation ranges: cannot belong to a real device.
 IP_PREFIXES = ["192.0.2", "198.51.100", "203.0.113"]
+# RFC 3849 documentation range for IPv6; the real export has both kinds.
+IPV6_PREFIX = "2001:db8"
+IPV6_SHARE = 0.02
 BASE62 = string.ascii_letters + string.digits
 
 PLATFORMS = ["android", "ios", "windows", "OS X", "web_player"]
@@ -80,8 +83,8 @@ EPISODES_PER_SHOW = 100
 CATALOG_AUDIOBOOKS = 10
 CHAPTERS_PER_AUDIOBOOK = 12
 
-# Number of records in the fixed edge-case block (see edge_case_records).
-EDGE_RECORDS = 23
+# Number of records in the fixed edge-case block (see edge_case_records), duplicates included.
+EDGE_RECORDS = 27
 
 
 def base62_id(rng):
@@ -123,6 +126,12 @@ def build_catalog(rng):
     return {"music": tracks, "podcast": episodes, "audiobook": chapters}
 
 
+def random_ip(rng):
+    if rng.random() < IPV6_SHARE:
+        return f"{IPV6_PREFIX}:{rng.randrange(65536):x}::{rng.randrange(1, 65536):x}"
+    return f"{rng.choice(IP_PREFIXES)}.{rng.randint(1, 254)}"
+
+
 def format_ts(moment):
     return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -148,7 +157,7 @@ def build_record(rng, catalog, kind, ts=None, ms_played=None):
         platform=rng.choice(PLATFORMS),
         ms_played=ms_played,
         conn_country=rng.choice(COUNTRIES),
-        ip_addr=f"{rng.choice(IP_PREFIXES)}.{rng.randint(1, 254)}",
+        ip_addr=random_ip(rng),
         reason_start=rng.choice(REASON_START),
         reason_end=reason_end,
         shuffle=maybe_null(rng, rng.random() < 0.5),
@@ -172,6 +181,14 @@ def pick_kind(rng):
     return "audiobook"
 
 
+def pick_file(rng, kind):
+    """Which file a record lands in. As in the real export, content type does not follow the file name."""
+    if kind == "audiobook":
+        return AUDIO_FILE
+    video_share = {"music": 0.01, "podcast": 0.70}[kind]
+    return VIDEO_FILE if rng.random() < video_share else AUDIO_FILE
+
+
 def local_to_utc(year, month, day, hour, minute):
     return datetime(year, month, day, hour, minute, tzinfo=LISBON).astimezone(timezone.utc)
 
@@ -181,20 +198,20 @@ def edge_case_records(rng, catalog):
 
     Later phases rely on these to test null handling, the private-session
     policy, local-time conversion, deduplication and content-type filters.
-    Yields (kind, record) pairs; exactly EDGE_RECORDS of them.
+    Yields (file, record) pairs; EDGE_RECORDS minus the 3 duplicates of them.
     """
     # A boolean that is null: 2 records for each of the 4 optional booleans (8).
     for name in BOOLEANS:
         for _ in range(2):
             record = build_record(rng, catalog, "music")
             record[name] = None
-            yield "music", record
+            yield AUDIO_FILE, record
 
     # Private sessions (3).
     for _ in range(3):
         record = build_record(rng, catalog, "music")
         record["incognito_mode"] = True
-        yield "music", record
+        yield AUDIO_FILE, record
 
     twenty_minutes = 20 * 60 * 1000
     # Streams that cross midnight in Lisbon local time (4). In winter Lisbon is UTC+0, so
@@ -207,20 +224,33 @@ def edge_case_records(rng, catalog):
         local_to_utc(2025, 8, 2, 0, 12),
     ]
     for end in crossings:
-        yield "music", build_record(rng, catalog, "music", ts=end, ms_played=twenty_minutes)
+        yield AUDIO_FILE, build_record(rng, catalog, "music", ts=end, ms_played=twenty_minutes)
 
     # Audiobook streams (3).
     for _ in range(3):
-        yield "audiobook", build_record(rng, catalog, "audiobook")
+        yield AUDIO_FILE, build_record(rng, catalog, "audiobook")
 
     # A podcast show and a music artist with the same name (2).
     lookalike = "Synthetic Artist 07"
     music = build_record(rng, catalog, "music")
     music["master_metadata_album_artist_name"] = lookalike
-    yield "music", music
+    yield AUDIO_FILE, music
     podcast = build_record(rng, catalog, "podcast")
     podcast["episode_show_name"] = lookalike
-    yield "podcast", podcast
+    yield VIDEO_FILE, podcast
+
+    # Content type does not follow the file name, and a show name can be an empty string
+    # (not null) in the real export. IPv6 addresses occur there too (4).
+    episode_in_audio = build_record(rng, catalog, "podcast")
+    episode_in_audio["episode_show_name"] = ""
+    yield AUDIO_FILE, episode_in_audio
+    episode_in_video = build_record(rng, catalog, "podcast")
+    episode_in_video["episode_show_name"] = ""
+    yield VIDEO_FILE, episode_in_video
+    for target in (VIDEO_FILE, AUDIO_FILE):
+        record = build_record(rng, catalog, "music")
+        record["ip_addr"] = f"{IPV6_PREFIX}:{rng.randrange(65536):x}::{rng.randrange(1, 65536):x}"
+        yield target, record
 
     # The 3 exact duplicates are added by generate_records, which owns the first records.
 
@@ -242,21 +272,18 @@ class JsonArrayWriter:
         self.file.close()
 
 
-def target_file(kind):
-    return VIDEO_FILE if kind == "podcast" else AUDIO_FILE
-
-
 def generate_records(records, seed):
-    """Yield (kind, record) pairs: random body, edge-case block, then 3 duplicates."""
+    """Yield (file, record) pairs: random body, edge-case block, then 3 duplicates."""
     rng = random.Random(seed)
     catalog = build_catalog(rng)
     first = []
     for _ in range(records - EDGE_RECORDS):
         kind = pick_kind(rng)
         record = build_record(rng, catalog, kind)
+        target = pick_file(rng, kind)
         if len(first) < 3:
-            first.append((kind, record))
-        yield kind, record
+            first.append((target, record))
+        yield target, record
     yield from edge_case_records(rng, catalog)
     yield from first
 
@@ -265,8 +292,8 @@ def write_dataset(out_dir, records, seed):
     out_dir.mkdir(parents=True, exist_ok=True)
     writers = {name: JsonArrayWriter(out_dir / name) for name in (AUDIO_FILE, VIDEO_FILE)}
     try:
-        for kind, record in generate_records(records, seed):
-            writers[target_file(kind)].write(record)
+        for target, record in generate_records(records, seed):
+            writers[target].write(record)
     finally:
         for writer in writers.values():
             writer.close()

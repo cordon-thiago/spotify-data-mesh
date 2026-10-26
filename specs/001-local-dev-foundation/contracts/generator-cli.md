@@ -20,8 +20,10 @@ python sample_data/generate.py [--records N] [--seed S] [--out DIR]
 
 Two files in `--out`, each a UTF-8 JSON array with Spotify's `"key" : value` spacing, one record per object, keys in the order of [data-model.md](../data-model.md):
 
-- `streaming_history_audio_sample.json`: music and audiobook streams.
-- `streaming_history_video_sample.json`: podcast episodes.
+- `streaming_history_audio_sample.json`: mostly music, some podcast episodes, all audiobook streams.
+- `streaming_history_video_sample.json`: mostly podcast episodes, a little music.
+
+Content type does not follow the file name, as in the real export (see `docs/real-export-findings.md`, updated in Phase 1).
 
 Records are written one at a time, so memory use does not grow with `--records`. Existing files are overwritten.
 
@@ -30,7 +32,7 @@ Records are written one at a time, so memory use does not grow with `--records`.
 - Same `--records` and `--seed` give byte-identical files (same Python minor version).
 - Different `--seed` or `--records` give a different dataset with the same schema.
 - Every dataset contains all injected edge-case categories at any valid size.
-- `ip_addr` values are always inside RFC 5737 documentation ranges.
+- `ip_addr` values are always inside the RFC 5737 (IPv4) and RFC 3849 (`2001:db8::/32`, IPv6) documentation ranges.
 - The program never reads, writes or lists `data/`.
 
 ## Exit codes and messages

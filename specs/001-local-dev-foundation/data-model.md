@@ -12,7 +12,7 @@ One playback event. Every record carries all 23 keys, in this order; unused ones
 | 2 | `platform` | string | no | e.g. `android`, `ios`, `windows` |
 | 3 | `ms_played` | integer | no | Milliseconds played, > 0 |
 | 4 | `conn_country` | string, 2 letters | no | e.g. `PT` |
-| 5 | `ip_addr` | string, IPv4 | no | **Restricted.** Synthetic: RFC 5737 range only |
+| 5 | `ip_addr` | string, IPv4 or IPv6 | no | **Restricted.** Synthetic: RFC 5737 / RFC 3849 documentation ranges only |
 | 6 | `master_metadata_track_name` | string | yes | Music only |
 | 7 | `master_metadata_album_artist_name` | string | yes | Music only |
 | 8 | `master_metadata_album_album_name` | string | yes | Music only |
@@ -36,18 +36,20 @@ The audiobook URI shapes (`spotify:show:`, chapter as `spotify:episode:`) are as
 
 **Content type** is implied by which descriptor group is filled; exactly one group is non-null per record:
 
-| Content | Filled fields | File |
+| Content | Filled fields | Files it appears in |
 | --- | --- | --- |
-| Music | 6 to 9 | audio |
-| Audiobook | 13 to 16 | audio |
-| Podcast episode | 10 to 12 | video |
+| Music | 6 to 9 | mostly audio, a little video |
+| Audiobook | 13 to 16 | audio only |
+| Podcast episode | 10 to 12 | mostly video, some audio |
+
+Content type does not follow the file name, as in the real export (Phase 1 finding).
 
 ### Validation rules (enforced by the generator tests)
 
 - All 23 keys present, in the order above.
 - Exactly one descriptor group non-null.
 - `ms_played` is a positive integer; `ts` parses as UTC and falls in 2024-01-01 to 2025-12-31.
-- `ip_addr` is inside `192.0.2.0/24`, `198.51.100.0/24` or `203.0.113.0/24`.
+- `ip_addr` is inside `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24` or `2001:db8::/32`.
 - URIs match their `spotify:<kind>:<22 base-62>` pattern.
 
 ## Sample dataset
