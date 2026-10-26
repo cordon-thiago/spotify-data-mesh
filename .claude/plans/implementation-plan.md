@@ -1,10 +1,10 @@
 # Implementation plan: Spotify Data Mesh (phased, learning-first)
 
-Source design: [.claude/plans/project-1-spotify.md](project-1-spotify.md).
+Business rules, governance, metrics and eval design: [business-rules.md](business-rules.md).
 
 ## Goal
 
-A personal data mesh over the Spotify extended streaming history export: Postgres + dbt Core + ODCS data contracts + semantic layer + AI agent + eval comparing three agent configurations (A, B, C).
+A personal data mesh over the Spotify extended streaming history export: Postgres + dbt v2 + ODCS data contracts + semantic layer + AI agent + eval comparing three agent configurations (A, B, C).
 
 Hypothesis: data contracts and a semantic layer make the agent err less than raw SQL over tables.
 
@@ -16,7 +16,47 @@ Each phase = **one new concept + one running deliverable + one learning checkpoi
 
 - Everything in the repository is in **English**: column, table, metric and dimension names, folders, files, branches, commits, comments, docstrings, contract and dbt YAML descriptions, eval questions and reports, ADRs, README.
 - Raw export stays out of git (`data/` in `.gitignore`). Only code, contracts, eval questions and synthetic sample data are committed.
-- Naming used in the design doc, translated:
+- Folder structure (dbt conventions: `staging` / `intermediate` / `marts`, `stg_<source>__<entity>`, `fct_` and `dim_`, one `_<folder>__models.yml` and `_<source>__sources.yml` per folder, staging as views, marts as tables):
+
+```text
+spotify-data-mesh/
+  data/                                  # raw export, kept out of git
+  sample_data/                           # synthetic, same schema, committed
+  ingest/                                # JSON → CSV → COPY loader
+  sql/                                   # roles.sql, DDL
+  contracts/                             # one ODCS contract per data product
+    spotify_streams.odcs.yaml
+    listens.odcs.yaml
+    listened_catalog.odcs.yaml
+  dbt/
+    dbt_project.yml
+    packages.yml
+    models/
+      staging/spotify/
+        _spotify__sources.yml
+        _spotify__models.yml
+        stg_spotify__streams.sql
+      intermediate/
+        _int_listens__models.yml
+        int_streams_deduplicated.sql
+      marts/listens/
+        _listens__models.yml
+        _listens__semantic_models.yml
+        fct_listens.sql
+      marts/catalog/
+        _catalog__models.yml
+        dim_listened_catalog.sql
+    tests/  macros/
+  agent/                                 # configurations A, B and C
+  eval/
+    questions.yaml
+    expected/
+    run.py
+    reports/
+  docs/                                  # ADRs
+```
+
+- Naming used in the original design, translated:
 
 | Design doc | Project |
 | --- | --- |
@@ -39,26 +79,26 @@ Resolved when the phase that needs them starts.
 ## Phases
 
 ### Phase 0: Foundation (concept: reproducible environment)
-- Folder structure from the design doc; `git init`; `.gitignore` with `data/`; English README.
-- `docker-compose.yml` with Postgres; Python venv; `dbt-postgres`.
-- `sample_data/`: synthetic generator with the 21 export fields (also the pipeline test fixture).
+- Folder structure from the Conventions section; `git init`; `.gitignore` with `data/`; English README.
+- `docker-compose.yml` with Postgres; Python venv; `dbt-oss` (dbt v2, Postgres adapter experimental, see `docs/0001-dbt-v2-experimental-postgres.md`).
+- `sample_data/`: synthetic generator with the 23 export fields (also the pipeline test fixture).
 - Learn: why raw data stays out of git; Docker/Postgres basics.
 - Checkpoint: `docker compose up` and `psql` connect; sample data generated.
 
 ### Phase 1: Raw ingestion (concept: source-aligned data, ELT)
-- Inspect the real ZIP (file names and schema); adjust contract if it differs from the README.
+- Inspect the real ZIP (file names and schema); adjust contract if it differs from the README. Real samples show 23 fields (adds four `audiobook_*` fields; `ip_addr`; no `user_agent_decrypted` or `username`) and podcast episodes in the "video" file; confirm which files hold which content types.
 - `ingest/load.py`: flatten JSON → CSV → `COPY` into restricted `raw.spotify_streams`.
 - ✍️ Write the DDL column list and types.
 - Checkpoint: JSON row count equals table row count; check `null` in boolean fields.
 
 ### Phase 2: Roles and base governance (concept: privacy by permission, not by prompt)
 - Postgres roles `owner`, `dbt`, `agent`; schemas `raw`, `staging`, `marts`, `semantic`; GRANTs in `sql/roles.sql`.
-- ODCS contract `contracts/spotify_streams.odcs.yaml` with per-field classification (IP, user agent, username = restricted).
-- Checkpoint: as `agent`, `SELECT ip_addr_decrypted` fails.
+- ODCS contract `contracts/spotify_streams.odcs.yaml` with per-field classification (`ip_addr` = restricted; the real export has no user agent or username field).
+- Checkpoint: as `agent`, `SELECT ip_addr` fails.
 
 ### Phase 3: dbt staging + `fct_listens` (concept: dbt layers, tests, business rules)
 - `dbt init`, sources, `stg_spotify__streams.sql` (rename, cast, `ts` is UTC end time → start = end − `ms_played`).
-- `int_streams_deduplicated.sql`: drops IP / user agent / username (the only door from restricted to marts), dedups, excludes incognito.
+- `int_streams_deduplicated.sql`: drops `ip_addr` (the only door from restricted to marts), dedups, excludes incognito.
 - `fct_listens.sql`: `local_date`, `hour_of_day` in `Europe/Lisbon`, `content_type`, `is_completed_listen`.
 - Tests: uniqueness, accepted values, nullable booleans, `ts` range, one singular test, one unit test on timezone conversion.
 - ✍️ Write the dedup rule and the 30 s threshold.
@@ -67,7 +107,7 @@ Resolved when the phase that needs them starts.
 ### Phase 4: Catalog + privacy CI (concept: multiple data products, contracts as code)
 - `dim_listened_catalog` keyed by `spotify_track_uri`; contracts for `listens` and `listened_catalog`.
 - Data Contract CLI test; a test that **fails if any restricted field appears in marts**.
-- Checkpoint: deliberately add `ip_addr_decrypted` to a mart and watch the test fail.
+- Checkpoint: deliberately add `ip_addr` to a mart and watch the test fail.
 
 ### Phase 5: Initial eval, config A (concept: measurable baseline)
 - `eval/questions.yaml` with 12 questions, **frozen before any run**; expected answers from reviewed SQL in `eval/expected/`.
@@ -109,4 +149,4 @@ Resolved when the phase that needs them starts.
 
 ## Pace
 
-About one session per phase (design doc assumes ~4 h/week). Per phase: concept explained → small implementation steps → learner's ✍️ part → checkpoint → next phase.
+About one session per phase (assumes ~4 h/week). Per phase: concept explained → small implementation steps → learner's ✍️ part → checkpoint → next phase.
