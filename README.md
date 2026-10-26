@@ -2,7 +2,7 @@
 
 A personal data mesh over the Spotify extended streaming history export: Postgres, dbt, ODCS data contracts, a semantic layer and an AI agent, with an eval that compares three agent configurations. The hypothesis is that data contracts and a semantic layer make the agent err less than raw SQL over tables.
 
-The phased plan is in [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md), and the business rules in [.claude/plans/business-rules.md](.claude/plans/business-rules.md). This repository is at **Phase 0: local development foundation**.
+The phased plan is in [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md), and the business rules in [.claude/plans/business-rules.md](.claude/plans/business-rules.md). This repository is at **Phase 1: raw ingestion**.
 
 ## Prerequisites
 
@@ -34,6 +34,9 @@ make psql                # open psql inside the container; try: select 1;
 | `make psql` | Open `psql` inside the database container |
 | `make sample` | Generate the synthetic sample data |
 | `make test` | Run the test suite |
+| `make raw-table` | Create `raw.spotify_streams` from `sql/raw_spotify_streams.sql` |
+| `make load` | Load `sample_data/` into the raw table (`SOURCE=data` for the real export) |
+| `make inspect SOURCE=data` | Show the structure of an export folder, never its values |
 
 The database listens on `127.0.0.1:5432` only (change `POSTGRES_PORT` in `.env` if the port is taken). Connection settings: user `owner`, database `spotify_mesh`, password from `.env`.
 
@@ -51,6 +54,19 @@ make test                         # generator and repository hygiene tests
 
 The same `RECORDS` and `SEED` always give byte-identical files. Details, file names and the edge cases every dataset contains are in [sample_data/README.md](sample_data/README.md).
 
+## Loading data
+
+The raw table keeps the export as it arrives (load first, transform later). Its definition is [sql/raw_spotify_streams.sql](sql/raw_spotify_streams.sql); the findings that drove its types are in [docs/real-export-findings.md](docs/real-export-findings.md).
+
+```bash
+make raw-table                 # create the schema and table (drops and recreates the table)
+make load                      # load sample_data/ (synthetic)
+make inspect SOURCE=data       # structure of the real export: names, types, counts
+make load SOURCE=data          # load the real export from the private data/ folder
+```
+
+`make load` prints, per file and in total, the records read, the rows loaded and the `NULL` counts of the four optional boolean fields, then commits only if every figure matches. A load replaces the table content, is all-or-nothing, and never prints field values. See [ingest/README.md](ingest/README.md).
+
 ## Data handling
 
 This repository is public, so what goes into git matters.
@@ -63,11 +79,11 @@ This repository is public, so what goes into git matters.
 
 **Why the real export stays out of git:** it contains your IP address and a detailed record of what you listened to and when. Anything pushed to a public repository can be copied, cached and indexed, and deleting it later does not undo that. Synthetic data has the same shape and no personal content, so the pipeline, the tests and the demos use it instead.
 
-**Before each push**, run `make test`. It checks that `data/` is ignored and that no tracked file contains an IPv4 address outside the reserved documentation ranges (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`). It scans the working tree, not the git history; if a real address was ever committed, the history needs to be rewritten before pushing.
+**Before each push**, run `make test`. It checks that `data/` is ignored and that no tracked file contains an IPv4 or IPv6 address outside the reserved documentation ranges (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`). It scans the working tree, not the git history; if a real address was ever committed, the history needs to be rewritten before pushing.
 
 ## Next phase
 
-Phase 1 loads the real export into a restricted `raw` table. See [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md).
+Phase 2 adds database roles and grants so the agent can never read restricted fields. See [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md).
 
 ## Troubleshooting
 

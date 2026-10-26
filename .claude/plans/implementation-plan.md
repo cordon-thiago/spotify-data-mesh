@@ -89,7 +89,7 @@ Resolved when the phase that needs them starts.
 - Inspect the real ZIP (file names and schema); adjust contract if it differs from the README. Real samples show 23 fields (adds four `audiobook_*` fields; `ip_addr`; no `user_agent_decrypted` or `username`) and podcast episodes in the "video" file; confirm which files hold which content types.
 - `ingest/load.py`: flatten JSON → CSV → `COPY` into restricted `raw.spotify_streams`.
 - ✍️ Write the DDL column list and types.
-- Checkpoint: JSON row count equals table row count; check `null` in boolean fields.
+- Checkpoint: JSON row count equals table row count; check `null` in boolean fields. **Done 2026-10-26** (spec in `specs/002-raw-ingestion/`): 7,922 real records = 7,922 rows, per file and in total; `NULL` booleans equal on both sides (`offline` 262); reload leaves the same rows; loads in 0.4 s. Findings: `docs/real-export-findings.md`.
 
 ### Phase 2: Roles and base governance (concept: privacy by permission, not by prompt)
 - Postgres roles `owner`, `dbt`, `agent`; schemas `raw`, `staging`, `marts`, `semantic`; GRANTs in `sql/roles.sql`.
