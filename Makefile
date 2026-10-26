@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
-.PHONY: help venv up down reset psql sample test
+.PHONY: help venv up down reset psql sample test raw-table load inspect
 
 # Load local settings (POSTGRES_*) from .env when it exists, and pass them to every command.
 -include .env
@@ -39,3 +39,13 @@ sample: ## Generate synthetic sample data (RECORDS=2000 SEED=42)
 
 test: ## Run the test suite
 	$(VENV)/bin/pytest
+
+raw-table: ## Apply the table definition in sql/raw_spotify_streams.sql
+	docker compose exec -T db psql -v ON_ERROR_STOP=1 -U $(POSTGRES_USER) -d $(POSTGRES_DB) < sql/raw_spotify_streams.sql
+
+load: ## Load streaming history into raw.spotify_streams (SOURCE=sample_data)
+	$(VENV)/bin/python ingest/load.py --source $(or $(SOURCE),sample_data)
+
+inspect: ## Show the structure of an export folder (SOURCE=data)
+	@test -n "$(SOURCE)" || { echo "error: SOURCE is required, for example make inspect SOURCE=data"; exit 2; }
+	$(VENV)/bin/python ingest/inspect_export.py $(SOURCE)
