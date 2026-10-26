@@ -1,5 +1,15 @@
-# Raw Spotify export: personal data, never committed (constitution, principle V)
-data/
+# Raw Spotify export: personal data, never committed (constitution, principle V).
+# The README stays tracked so the folder exists after a clone.
+data/*
+!data/README.md
+
+# Local environment: real values for the database, never committed
+.env
+
+# Python environment and caches
+.venv/
+__pycache__/
+.pytest_cache/
 
 # Local Claude Code settings and credentials
 .claude/settings.local.json

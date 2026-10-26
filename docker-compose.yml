@@ -1,0 +1,22 @@
+# Local Postgres for the Spotify data mesh. Settings come from .env (see .env.example).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-owner}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - run cp .env.example .env}"
+      POSTGRES_DB: ${POSTGRES_DB:-spotify_mesh}
+    ports:
+      # Bound to loopback only: the database is not reachable from the network.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-owner} -d ${POSTGRES_DB:-spotify_mesh}"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  pgdata:
