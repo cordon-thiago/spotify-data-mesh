@@ -3,8 +3,8 @@
 ## Core Principles
 
 ### I. Privacy by Permission, Not by Prompt (NON-NEGOTIABLE)
-`ip_addr_decrypted`, `user_agent_decrypted` and `username` MUST NOT reach any curated product,
-the semantic layer, the agent or the eval. This MUST be enforced by database roles and grants
+`ip_addr` and any user agent or username field the export may contain MUST NOT reach any
+curated product, the semantic layer, the agent or the eval. This MUST be enforced by database roles and grants
 (`owner`, `dbt`, `agent`), never by prompt instructions. The only door from the restricted
 schema to the marts is `int_streams_deduplicated`. Every agent configuration (A, B, C) MUST run
 as the `agent` role. Every agent query MUST be row-limited and written to a local audit log
@@ -40,7 +40,7 @@ Rationale: writing questions after seeing results biases the comparison of A, B 
 
 ### V. Reproducible Without Personal Data
 Raw export files MUST stay out of git (`data/` in `.gitignore`). The repository MUST publish
-only code, contracts, eval questions and a synthetic `sample_data/` with the same 21-field
+only code, contracts, eval questions and a synthetic `sample_data/` with the same 23-field
 schema. The full pipeline MUST run end to end on `sample_data/` alone. Secrets and credentials
 MUST NOT be committed, including anything under `.claude/` that holds them.
 Rationale: the export contains IP addresses and listening habits that must never be published.
@@ -54,7 +54,8 @@ Rationale: the project exists to learn data mesh practice; speed is secondary to
 
 ## Technology and Repository Constraints
 
-- Stack: Postgres (local, Docker), dbt Core with `dbt-postgres`, ODCS contracts with the Data
+- Stack: Postgres (local, Docker), dbt v2 (open-source `dbt-oss`; its Postgres adapter is
+  experimental, see `docs/0001-dbt-v2-experimental-postgres.md`), ODCS contracts with the Data
   Contract CLI, Python for ingestion, agent and eval. The semantic layer is MetricFlow or Cube,
   decided at the start of Phase 7.
 - Everything in the repository MUST be in English: identifiers, files, branches, commits,
@@ -83,4 +84,4 @@ changes MUST NOT weaken the privacy guarantee without a MAJOR bump and an ADR. E
 review MUST verify compliance; deviations MUST be justified in the plan's complexity tracking.
 Runtime guidance lives in `.claude/plans/implementation-plan.md`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-25
+**Version**: 1.0.2 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-25
