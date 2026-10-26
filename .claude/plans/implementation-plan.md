@@ -83,7 +83,7 @@ Resolved when the phase that needs them starts.
 - `docker-compose.yml` with Postgres; Python venv; `dbt-oss` (dbt v2, Postgres adapter experimental, see `docs/0001-dbt-v2-experimental-postgres.md`).
 - `sample_data/`: synthetic generator with the 23 export fields (also the pipeline test fixture).
 - Learn: why raw data stays out of git; Docker/Postgres basics.
-- Checkpoint: `docker compose up` and `psql` connect; sample data generated.
+- Checkpoint: `docker compose up` and `psql` connect; sample data generated. **Done 2026-10-26** (spec in `specs/001-local-dev-foundation/`): `make up` healthy in 6.7 s, data survives a restart, `make reset` cleans it, `make sample` writes 2000 records in 0.13 s with identical output on rerun, 35 tests pass.
 
 ### Phase 1: Raw ingestion (concept: source-aligned data, ELT)
 - Inspect the real ZIP (file names and schema); adjust contract if it differs from the README. Real samples show 23 fields (adds four `audiobook_*` fields; `ip_addr`; no `user_agent_decrypted` or `username`) and podcast episodes in the "video" file; confirm which files hold which content types.

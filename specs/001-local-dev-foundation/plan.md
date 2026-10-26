@@ -32,6 +32,7 @@ Phase 0 gives the project a reproducible local base: the repository folder skele
 
 - Docker was initially missing from the WSL distro. Resolved on 2026-10-25: Docker Desktop WSL integration is enabled for `Ubuntu-22.04` (Docker 27.3.1, Compose v2.30.3, daemon reachable). `psql` is still not installed on the host; `make psql` uses the client inside the container. Docker Desktop with WSL integration stays a documented prerequisite.
 - dbt v2 loads the Postgres adapter only with the experimental flag, and connecting needs the system library `libpq.so.5` (`sudo apt install libpq5`). Probed on this machine with `dbt-oss` 2.0.8: `dbt parse` succeeds with the flag and fails without it; `dbt debug` fails on the missing `libpq`. Phase 0 only checks `dbt --version`; the connection check belongs to Phase 3, but `libpq5` is listed as a prerequisite now.
+- Measured on 2026-10-26 (WSL2, Docker Desktop): `make up` healthy in 6.7 s from a pulled image; `make sample` (2000 records) 0.13 s; 1,000,000 records in 27 s at 17 MB peak memory; `dbt-oss` 2.0.8 installed with the pinned requirements and no `dbt` or `dbt-core`.
 - MetricFlow support in dbt v2 is unconfirmed. This affects the Phase 7 choice (MetricFlow vs Cube), not Phase 0.
 
 ## Constitution Check

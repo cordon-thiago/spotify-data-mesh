@@ -22,12 +22,12 @@ description: "Task list for Local Development Foundation (Phase 0)"
 
 **Purpose**: Repository skeleton and tracked configuration
 
-- [ ] T001 Replace the content of `.gitignore` with: `data/*`, `!data/README.md`, `.env`, `.venv/`, `__pycache__/`, `.pytest_cache/`, `.claude/settings.local.json`, each under a short English comment (the old plain `data/` line is removed)
-- [ ] T002 [P] Create `.env.example` with `POSTGRES_USER=owner`, `POSTGRES_PASSWORD=change_me_local_only`, `POSTGRES_DB=spotify_mesh`, `POSTGRES_PORT=5432`, and a comment that the password is a local-only placeholder, not a real secret
-- [ ] T003 [P] Create `requirements.txt` (`dbt-oss==2.0.8`), `requirements-dev.txt` (`-r requirements.txt`, `pytest==9.1.1`) and `pytest.ini` (`pythonpath = sample_data`, `testpaths = tests`)
-- [ ] T004 [P] Create one-paragraph English READMEs explaining each folder's purpose and the phase that fills it: `ingest/README.md` (Phase 1), `sql/README.md` (Phase 2), `contracts/README.md` (Phases 2 and 4), `dbt/README.md` (Phase 3)
-- [ ] T005 [P] Create one-paragraph English READMEs: `agent/README.md` (Phases 5 to 7, configurations A, B, C) and `eval/README.md` (Phases 5 to 8, `questions.yaml`, `expected/`, `reports/`)
-- [ ] T006 [P] Create `docs/README.md` as the ADR index, listing [docs/0001-dbt-v2-experimental-postgres.md](../../docs/0001-dbt-v2-experimental-postgres.md)
+- [X] T001 Replace the content of `.gitignore` with: `data/*`, `!data/README.md`, `.env`, `.venv/`, `__pycache__/`, `.pytest_cache/`, `.claude/settings.local.json`, each under a short English comment (the old plain `data/` line is removed)
+- [X] T002 [P] Create `.env.example` with `POSTGRES_USER=owner`, `POSTGRES_PASSWORD=change_me_local_only`, `POSTGRES_DB=spotify_mesh`, `POSTGRES_PORT=5432`, and a comment that the password is a local-only placeholder, not a real secret
+- [X] T003 [P] Create `requirements.txt` (`dbt-oss==2.0.8`), `requirements-dev.txt` (`-r requirements.txt`, `pytest==9.1.1`) and `pytest.ini` (`pythonpath = sample_data`, `testpaths = tests`)
+- [X] T004 [P] Create one-paragraph English READMEs explaining each folder's purpose and the phase that fills it: `ingest/README.md` (Phase 1), `sql/README.md` (Phase 2), `contracts/README.md` (Phases 2 and 4), `dbt/README.md` (Phase 3)
+- [X] T005 [P] Create one-paragraph English READMEs: `agent/README.md` (Phases 5 to 7, configurations A, B, C) and `eval/README.md` (Phases 5 to 8, `questions.yaml`, `expected/`, `reports/`)
+- [X] T006 [P] Create `docs/README.md` as the ADR index, listing [docs/0001-dbt-v2-experimental-postgres.md](../../docs/0001-dbt-v2-experimental-postgres.md)
 
 ---
 
@@ -37,8 +37,8 @@ description: "Task list for Local Development Foundation (Phase 0)"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 Create `Makefile` with: `SHELL := /bin/bash`, `.PHONY` list, `-include .env` and `export` of its variables, `export DBT_ALLOW_EXPERIMENTAL_ADAPTERS=true`, a `PYTHON ?= python3.12` variable, and the `venv` target that stops with a clear message if `$(PYTHON)` is missing, creates `.venv`, upgrades pip and runs `pip install -r requirements-dev.txt`
-- [ ] T008 Run `make venv`. If pip rejects a pin in `requirements.txt` or `requirements-dev.txt`, adjust to a resolving version and update the pins in `specs/001-local-dev-foundation/research.md` (section 6) and `contracts/environment-interface.md`. Confirm `.venv` contains `dbt-oss` and no `dbt` or `dbt-core` (`.venv/bin/pip list`)
+- [X] T007 Create `Makefile` with: `SHELL := /bin/bash`, `.PHONY` list, `-include .env` and `export` of its variables, `export DBT_ALLOW_EXPERIMENTAL_ADAPTERS=true`, a `PYTHON ?= python3.12` variable, and the `venv` target that stops with a clear message if `$(PYTHON)` is missing, creates `.venv`, upgrades pip and runs `pip install -r requirements-dev.txt`
+- [X] T008 Run `make venv`. If pip rejects a pin in `requirements.txt` or `requirements-dev.txt`, adjust to a resolving version and update the pins in `specs/001-local-dev-foundation/research.md` (section 6) and `contracts/environment-interface.md`. Confirm `.venv` contains `dbt-oss` and no `dbt` or `dbt-core` (`.venv/bin/pip list`)
 
 **Checkpoint**: `.venv` exists with pinned dependencies - user story work can begin
 
@@ -52,11 +52,11 @@ description: "Task list for Local Development Foundation (Phase 0)"
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Create `docker-compose.yml` with service `db`: image `postgres:16`; environment `POSTGRES_USER: ${POSTGRES_USER:-owner}`, `POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - run cp .env.example .env}"` (the value MUST be double-quoted and MUST NOT contain `: `, or YAML fails with "mapping values not allowed here" before Compose interpolates it), `POSTGRES_DB: ${POSTGRES_DB:-spotify_mesh}`; ports `127.0.0.1:${POSTGRES_PORT:-5432}:5432`; named volume `pgdata` mounted at `/var/lib/postgresql/data`; healthcheck `pg_isready -U ${POSTGRES_USER:-owner} -d ${POSTGRES_DB:-spotify_mesh}` (interval 5s, retries 12); no `restart` policy. Declare the `pgdata` volume at the bottom
-- [ ] T010 [US1] Add to `Makefile` the targets `up` (`docker compose up -d --wait`), `down` (`docker compose down`), `reset` (`docker compose down -v` then `docker compose up -d --wait`) and `psql` (`docker compose exec db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)`), each with a `##` help comment
-- [ ] T011 [US1] Create `README.md` (English) with: project one-liner and link to `.claude/plans/implementation-plan.md`; prerequisites (Docker Desktop with WSL integration enabled, Python 3.12, GNU Make, `sudo apt install libpq5` for dbt from Phase 3); setup steps (`cp .env.example .env`, `make venv`, `make up`, `make psql`); a Make targets table; a troubleshooting table copied from the failure table in `specs/001-local-dev-foundation/contracts/environment-interface.md` (Docker not reachable, port in use, password unset, stale state, wrong Python, dbt rejects Postgres, `libpq` missing, `dbt --version` shows `1.x`)
-- [ ] T012 [US1] Verify dbt v2: run `.venv/bin/dbt --version` and confirm the version starts with `2.`
-- [ ] T013 [US1] Verify quickstart.md section 1: `cp .env.example .env`, `make up`, `make psql` with `select 1;`, create a table, run `make down && make up` and confirm the table still exists with the same user, database and port, then `make reset` and confirm no old tables remain
+- [X] T009 [US1] Create `docker-compose.yml` with service `db`: image `postgres:16`; environment `POSTGRES_USER: ${POSTGRES_USER:-owner}`, `POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - run cp .env.example .env}"` (the value MUST be double-quoted and MUST NOT contain `: `, or YAML fails with "mapping values not allowed here" before Compose interpolates it), `POSTGRES_DB: ${POSTGRES_DB:-spotify_mesh}`; ports `127.0.0.1:${POSTGRES_PORT:-5432}:5432`; named volume `pgdata` mounted at `/var/lib/postgresql/data`; healthcheck `pg_isready -U ${POSTGRES_USER:-owner} -d ${POSTGRES_DB:-spotify_mesh}` (interval 5s, retries 12); no `restart` policy. Declare the `pgdata` volume at the bottom
+- [X] T010 [US1] Add to `Makefile` the targets `up` (`docker compose up -d --wait`), `down` (`docker compose down`), `reset` (`docker compose down -v` then `docker compose up -d --wait`) and `psql` (`docker compose exec db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)`), each with a `##` help comment
+- [X] T011 [US1] Create `README.md` (English) with: project one-liner and link to `.claude/plans/implementation-plan.md`; prerequisites (Docker Desktop with WSL integration enabled, Python 3.12, GNU Make, `sudo apt install libpq5` for dbt from Phase 3); setup steps (`cp .env.example .env`, `make venv`, `make up`, `make psql`); a Make targets table; a troubleshooting table copied from the failure table in `specs/001-local-dev-foundation/contracts/environment-interface.md` (Docker not reachable, port in use, password unset, stale state, wrong Python, dbt rejects Postgres, `libpq` missing, `dbt --version` shows `1.x`)
+- [X] T012 [US1] Verify dbt v2: run `.venv/bin/dbt --version` and confirm the version starts with `2.`
+- [X] T013 [US1] Verify quickstart.md section 1: `cp .env.example .env`, `make up`, `make psql` with `select 1;`, create a table, run `make down && make up` and confirm the table still exists with the same user, database and port, then `make reset` and confirm no old tables remain
 
 **Checkpoint**: User Story 1 delivers a reachable database and `dbt` v2; it is the MVP
 
@@ -70,7 +70,7 @@ description: "Task list for Local Development Foundation (Phase 0)"
 
 ### Tests for User Story 2 (write first, confirm they fail)
 
-- [ ] T014 [US2] Create `tests/test_generator.py` covering [contracts/generator-cli.md](contracts/generator-cli.md) and [data-model.md](data-model.md), by running the CLI in a temporary `--out` directory:
+- [X] T014 [US2] Create `tests/test_generator.py` covering [contracts/generator-cli.md](contracts/generator-cli.md) and [data-model.md](data-model.md), by running the CLI in a temporary `--out` directory:
   - every record has exactly the 23 keys of the data model in the stated order;
   - exactly one descriptor group is non-null per record (music: fields 6 to 9, podcast: 10 to 12, audiobook: 13 to 16); music and audiobook streams are in the audio file, episodes in the video file;
   - `ms_played` is a positive integer; `ts` parses as UTC and falls in 2024-01-01 to 2025-12-31; `offline_timestamp` is an integer or `null`;
@@ -82,12 +82,12 @@ description: "Task list for Local Development Foundation (Phase 0)"
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Create `sample_data/generate.py` (standard library only): module constants for the 23 field names in order, platform/country/reason value pools, a fixed time window of 2024-01-01 to 2025-12-31 UTC, and builders for music, podcast and audiobook records driven by `random.Random(seed)`. Names are synthetic (`Synthetic Track 0042`, `Synthetic Artist 07`), URIs are `spotify:<kind>:` plus 22 random base-62 characters, `ip_addr` is drawn only from `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`. Random mix about 80% music, 15% podcast, 5% audiobook; about 5% `null` in each of the four booleans; about 3% `incognito_mode = true`; `offline_timestamp` is epoch seconds and not derived from `ts`
-- [ ] T016 [US2] In `sample_data/generate.py` add the edge-case injectors that always run after the random body: `null` in each optional boolean (at least 2 per field), at least 3 `incognito_mode = true`, at least 2 streams crossing local midnight in `Europe/Lisbon` in winter (UTC offset 0) and 2 in summer (UTC+1) using `zoneinfo`, at least 3 exact duplicates of existing records, at least 3 audiobook streams, and one podcast and one music record whose artist/show strings look alike
-- [ ] T017 [US2] In `sample_data/generate.py` add the streaming writer and the CLI (`argparse`): options `--records` (default 2000, valid 100 to 10,000,000 inclusive), `--seed` (default 42), `--out` (default `sample_data`, created if missing, refused when it is `data` or inside it); write `streaming_history_audio_sample.json` (music and audiobook) and `streaming_history_video_sample.json` (podcast) one record at a time as a JSON array with `"key" : value` spacing; overwrite existing files; print one line per file with its record count; print the exact error messages and exit with code 2 as in the contract
-- [ ] T018 [US2] Add to `Makefile` the targets `sample` (`.venv/bin/python sample_data/generate.py --records $(or $(RECORDS),2000) --seed $(or $(SEED),42)`) and `test` (`.venv/bin/pytest`)
-- [ ] T019 [US2] Run `make test` until `tests/test_generator.py` passes, then run `make sample`, record `sha256sum sample_data/*.json`, run `make sample` again and confirm the checksums are identical (`git status` cannot show this while the files are still untracked); the two generated files in `sample_data/` are the committed fixture
-- [ ] T020 [P] [US2] Create `sample_data/README.md` explaining that all content is synthetic, how to regenerate (`make sample`, `RECORDS`, `SEED`), the file names and which content type each holds, the injected edge cases, and that real file names are confirmed in Phase 1
+- [X] T015 [US2] Create `sample_data/generate.py` (standard library only): module constants for the 23 field names in order, platform/country/reason value pools, a fixed time window of 2024-01-01 to 2025-12-31 UTC, and builders for music, podcast and audiobook records driven by `random.Random(seed)`. Names are synthetic (`Synthetic Track 0042`, `Synthetic Artist 07`), URIs are `spotify:<kind>:` plus 22 random base-62 characters, `ip_addr` is drawn only from `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`. Random mix about 80% music, 15% podcast, 5% audiobook; about 5% `null` in each of the four booleans; about 3% `incognito_mode = true`; `offline_timestamp` is epoch seconds and not derived from `ts`
+- [X] T016 [US2] In `sample_data/generate.py` add the edge-case injectors that always run after the random body: `null` in each optional boolean (at least 2 per field), at least 3 `incognito_mode = true`, at least 2 streams crossing local midnight in `Europe/Lisbon` in winter (UTC offset 0) and 2 in summer (UTC+1) using `zoneinfo`, at least 3 exact duplicates of existing records, at least 3 audiobook streams, and one podcast and one music record whose artist/show strings look alike
+- [X] T017 [US2] In `sample_data/generate.py` add the streaming writer and the CLI (`argparse`): options `--records` (default 2000, valid 100 to 10,000,000 inclusive), `--seed` (default 42), `--out` (default `sample_data`, created if missing, refused when it is `data` or inside it); write `streaming_history_audio_sample.json` (music and audiobook) and `streaming_history_video_sample.json` (podcast) one record at a time as a JSON array with `"key" : value` spacing; overwrite existing files; print one line per file with its record count; print the exact error messages and exit with code 2 as in the contract
+- [X] T018 [US2] Add to `Makefile` the targets `sample` (`.venv/bin/python sample_data/generate.py --records $(or $(RECORDS),2000) --seed $(or $(SEED),42)`) and `test` (`.venv/bin/pytest`)
+- [X] T019 [US2] Run `make test` until `tests/test_generator.py` passes, then run `make sample`, record `sha256sum sample_data/*.json`, run `make sample` again and confirm the checksums are identical (`git status` cannot show this while the files are still untracked); the two generated files in `sample_data/` are the committed fixture
+- [X] T020 [P] [US2] Create `sample_data/README.md` explaining that all content is synthetic, how to regenerate (`make sample`, `RECORDS`, `SEED`), the file names and which content type each holds, the injected edge cases, and that real file names are confirmed in Phase 1
 
 **Checkpoint**: User Stories 1 and 2 both work independently
 
@@ -101,13 +101,13 @@ description: "Task list for Local Development Foundation (Phase 0)"
 
 ### Tests for User Story 3
 
-- [ ] T021 [P] [US3] Create `tests/test_repo_hygiene.py`: (a) `git check-ignore -q data/dummy_export.json` succeeds and `git check-ignore -q data/README.md` fails (it is tracked); (b) scan every file from `git ls-files` plus untracked non-ignored files (`git ls-files --cached --others --exclude-standard`) for IPv4 addresses and fail on any outside `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `127.0.0.0/8`, `0.0.0.0`, the masked `00.000.000.000`; skip `requirements*.txt`; print the offending file and line on failure
+- [X] T021 [P] [US3] Create `tests/test_repo_hygiene.py`: (a) `git check-ignore -q data/dummy_export.json` succeeds and `git check-ignore -q data/README.md` fails (it is tracked); (b) scan every file from `git ls-files` plus untracked non-ignored files (`git ls-files --cached --others --exclude-standard`) for IPv4 addresses and fail on any outside `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `127.0.0.0/8`, `0.0.0.0`, the masked `00.000.000.000`; skip `requirements*.txt`; print the offending file and line on failure
 
 ### Implementation for User Story 3
 
-- [ ] T022 [P] [US3] Create `data/README.md` explaining that this folder holds the real Spotify export, that everything here except this file is ignored by git, and why (IP address, listening habits)
-- [ ] T023 [US3] Add a "Data handling" section to `README.md` stating what is committed (code, contracts, eval questions, synthetic sample data) and what is never committed (the real export, `.env`), the reason in plain language, and the command to run before each push (`make test`, which includes the IPv4 scan)
-- [ ] T024 [US3] Run `make test` until `tests/test_repo_hygiene.py` passes; then create `data/export_test.json`, confirm `git status --short data/` lists nothing, and remove the file
+- [X] T022 [P] [US3] Create `data/README.md` explaining that this folder holds the real Spotify export, that everything here except this file is ignored by git, and why (IP address, listening habits)
+- [X] T023 [US3] Add a "Data handling" section to `README.md` stating what is committed (code, contracts, eval questions, synthetic sample data) and what is never committed (the real export, `.env`), the reason in plain language, and the command to run before each push (`make test`, which includes the IPv4 scan)
+- [X] T024 [US3] Run `make test` until `tests/test_repo_hygiene.py` passes; then create `data/export_test.json`, confirm `git status --short data/` lists nothing, and remove the file
 
 **Checkpoint**: All three user stories are independently functional
 
@@ -117,10 +117,10 @@ description: "Task list for Local Development Foundation (Phase 0)"
 
 **Purpose**: Completeness checks across stories
 
-- [ ] T025 Add to `README.md` a "Sample data" section (commands from T018, link to `sample_data/README.md`) and a "Next phase" pointer to Phase 1 in `.claude/plans/implementation-plan.md`
-- [ ] T026 Run the full [quickstart.md](quickstart.md) from section 2 to 5 and confirm every expected outcome; section 1 depends on T013
-- [ ] T027 Final privacy check: `git ls-files` contains no file under `data/` except `data/README.md`, no `.env`, and the IPv4 scan in `make test` passes; `git status` shows no personal data
-- [ ] T028 Record the outcome: mark the Phase 0 checkpoint as done in `.claude/plans/implementation-plan.md`, and note any unchecked task with its reason in `plan.md` ("Open environment findings")
+- [X] T025 Add to `README.md` a "Sample data" section (commands from T018, link to `sample_data/README.md`) and a "Next phase" pointer to Phase 1 in `.claude/plans/implementation-plan.md`
+- [X] T026 Run the full [quickstart.md](quickstart.md) from section 2 to 5 and confirm every expected outcome; section 1 depends on T013
+- [X] T027 Final privacy check: `git ls-files` contains no file under `data/` except `data/README.md`, no `.env`, and the IPv4 scan in `make test` passes; `git status` shows no personal data
+- [X] T028 Record the outcome: mark the Phase 0 checkpoint as done in `.claude/plans/implementation-plan.md`, and note any unchecked task with its reason in `plan.md` ("Open environment findings")
 
 ---
 
