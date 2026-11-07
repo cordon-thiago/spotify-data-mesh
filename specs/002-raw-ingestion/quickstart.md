@@ -4,8 +4,8 @@ Runnable checks that prove the feature end to end. Interfaces: [contracts/ingest
 
 ## Prerequisites
 
-- Phase 0 working: `make venv`, `make up`, `make sample` done; `make test` passes.
-- `make venv` re-run once so `psycopg` from `requirements.txt` is installed.
+- Phase 0 working: `uv sync`, `make up`, `make sample` done; `make test` passes.
+- `uv sync` re-run once so `psycopg` from `pyproject.toml` is installed.
 - For sections 4 and 5 only: the real export ZIP extracted into a subfolder of `data/` (for example `data/export/`).
 
 ## 1. Write and apply the table definition (the owner's exercise ✍️)

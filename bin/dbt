@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Run dbt from the uv environment with the experimental Postgres adapter enabled
+# (see docs/0001-dbt-v2-experimental-postgres.md).
+cd "$(dirname "$0")/.." || exit 1
+export DBT_ALLOW_EXPERIMENTAL_ADAPTERS=true
+exec uv run dbt "$@"

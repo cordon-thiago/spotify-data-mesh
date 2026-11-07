@@ -38,7 +38,7 @@ Use `dbt-oss` (dbt v2) with the experimental Postgres adapter, enabled through `
 
 ## Exit path
 
-If the experimental adapter blocks a phase, switch to dbt Core 1.11 with `dbt-postgres` (before v2 usage grows): replace `dbt-oss` in `requirements.txt`, drop the experimental flag, and run `dbt parse` to confirm. Revisit when Postgres reaches supported status in v2.
+If the experimental adapter blocks a phase, switch to dbt Core 1.11 with `dbt-postgres` (before v2 usage grows): replace `dbt-oss` in `pyproject.toml` (then `uv lock`), drop the experimental flag, and run `dbt parse` to confirm. Revisit when Postgres reaches supported status in v2.
 
 ## Review trigger
 

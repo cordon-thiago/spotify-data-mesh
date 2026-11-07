@@ -31,8 +31,8 @@ Reset check: `make reset` returns a clean database (no tables from earlier sessi
 ## 2. Create the Python environment
 
 ```bash
-make venv
-.venv/bin/dbt --version
+uv sync
+bin/dbt --version
 ```
 
 Expected: a version starting with `2.` (dbt v2, `dbt-oss` 2.0.8). The Postgres connection check (`dbt debug`) is done in Phase 3 and needs `libpq5` and `DBT_ALLOW_EXPERIMENTAL_ADAPTERS=true`.
@@ -59,7 +59,7 @@ Expected: different content, same schema. Restore the committed files afterwards
 Invalid input:
 
 ```bash
-.venv/bin/python sample_data/generate.py --records 0
+uv run python sample_data/generate.py --records 0
 ```
 
 Expected: exit code 2 and `error: --records must be between 100 and 10000000`.

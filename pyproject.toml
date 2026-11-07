@@ -1,0 +1,17 @@
+[project]
+name = "spotify-data-mesh"
+version = "0.1.0"
+description = "Local data mesh over a personal Spotify export"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "dbt-oss==2.0.8",
+    "psycopg[binary]==3.3.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]
+
+[tool.uv]
+package = false

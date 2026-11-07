@@ -15,7 +15,7 @@ The phased plan is in [.claude/plans/implementation-plan.md](.claude/plans/imple
 
 ```bash
 cp .env.example .env     # local settings; .env is git-ignored
-make venv                # create .venv with the pinned dependencies
+uv sync                  # create .venv from uv.lock (needs uv; uv run also does this)
 make up                  # start Postgres and wait until it is healthy
 make psql                # open psql inside the container; try: select 1;
 ```
@@ -27,7 +27,6 @@ make psql                # open psql inside the container; try: select 1;
 | Target | What it does |
 | --- | --- |
 | `make help` | List the targets |
-| `make venv` | Create `.venv` and install the pinned requirements |
 | `make up` | Start the database and wait until it is healthy |
 | `make down` | Stop the database; data is kept |
 | `make reset` | Delete all database data and start clean |
@@ -40,7 +39,7 @@ make psql                # open psql inside the container; try: select 1;
 
 The database listens on `127.0.0.1:5432` only (change `POSTGRES_PORT` in `.env` if the port is taken). Connection settings: user `owner`, database `spotify_mesh`, password from `.env`.
 
-dbt v2 loads the Postgres adapter only with `DBT_ALLOW_EXPERIMENTAL_ADAPTERS=true`. The Makefile sets it; if you run `.venv/bin/dbt` by hand, export it first. See [ADR 0001](docs/0001-dbt-v2-experimental-postgres.md).
+dbt v2 loads the Postgres adapter only with `DBT_ALLOW_EXPERIMENTAL_ADAPTERS=true`. The Make targets and `bin/dbt` set it, so run dbt as `bin/dbt <args>` (a wrapper around `uv run dbt`) and you never export it by hand. See [ADR 0001](docs/0001-dbt-v2-experimental-postgres.md).
 
 ## Sample data
 
@@ -93,7 +92,7 @@ Phase 2 adds database roles and grants so the agent can never read restricted fi
 | Port already in use | Compose error when binding the port | Set `POSTGRES_PORT` in `.env` to a free port |
 | Password unset | `required variable POSTGRES_PASSWORD is missing a value` | `cp .env.example .env` |
 | Stale database state | Old tables are still there | `make reset` |
-| Wrong Python version | `make venv` stops with `python3.12 not found` | Install Python 3.12 |
+| uv missing | `uv: command not found` | Install [uv](https://docs.astral.sh/uv/) |
 | dbt rejects Postgres | `The 'postgres' adapter is not yet supported by dbt` | Set `DBT_ALLOW_EXPERIMENTAL_ADAPTERS=true` (the Make targets already do) |
 | dbt cannot connect | `libpq.so.5: cannot open shared object file` | `sudo apt install libpq5` |
-| `dbt --version` shows `1.x` | An older dbt is in the same environment | Recreate `.venv`; keep only `dbt-oss` |
+| `dbt --version` shows `1.x` | An older dbt is in the same environment | `rm -rf .venv && uv sync`; keep only `dbt-oss` in `pyproject.toml` |
