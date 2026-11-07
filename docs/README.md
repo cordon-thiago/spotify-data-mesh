@@ -10,4 +10,5 @@ Architecture Decision Records (ADRs). Significant decisions are recorded here, a
 
 | Document | Content |
 | --- | --- |
+| [architecture.md](architecture.md) | Components, data flow, governance and eval design, with diagrams |
 | [real-export-findings.md](real-export-findings.md) | Structure and counts of the real Spotify export (no personal data) |
