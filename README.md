@@ -2,7 +2,7 @@
 
 A personal data mesh over the Spotify extended streaming history export: Postgres, dbt, ODCS data contracts, a semantic layer and an AI agent, with an eval that compares three agent configurations. The hypothesis is that data contracts and a semantic layer make the agent err less than raw SQL over tables.
 
-The phased plan is in [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md), and the business rules in [.claude/plans/business-rules.md](.claude/plans/business-rules.md). This repository is at **Phase 1: raw ingestion**.
+The phased plan is in [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md), and the business rules in [.claude/plans/business-rules.md](.claude/plans/business-rules.md). The architecture is described in [docs/architecture.md](docs/architecture.md). This repository is at **Phase 1: raw ingestion**.
 
 ## Prerequisites
 
