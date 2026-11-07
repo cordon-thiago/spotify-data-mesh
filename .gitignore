@@ -13,3 +13,6 @@ __pycache__/
 
 # Local Claude Code settings and credentials
 .claude/settings.local.json
+
+# dbt run logs
+dbt/logs/
