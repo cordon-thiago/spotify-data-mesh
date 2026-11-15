@@ -98,3 +98,37 @@ def test_scan_detects_a_real_looking_ipv6_address():
     assert list(disallowed_addresses(f"seen at {public} today")) == [public]
     allowed = "2001:db8:1f::2a and ::1 and 12:18:21 and 2025-12-31T12:18:21Z and std::vector"
     assert list(disallowed_addresses(allowed)) == []
+
+
+# Env-file style only (a line that starts with the setting), where a real value would be pasted.
+PASSWORD_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?(?:DBT|AGENT|POSTGRES)_PASSWORD=(\S+)", re.MULTILINE)
+PLACEHOLDER_PASSWORDS = {"change_me_local_only"}
+
+
+def password_values(text):
+    """Values assigned to the project's password settings that are not the placeholder."""
+    for match in PASSWORD_ASSIGNMENT.finditer(text):
+        value = match.group(1).strip("\"'")
+        # $(...), ${...} and :-defaults are references to settings, not values.
+        if value and value not in PLACEHOLDER_PASSWORDS and not value.startswith(("$", "?", "{", "<")):
+            yield value
+
+
+def test_no_password_value_in_repository_files():
+    offences = []
+    for path in candidate_files():
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        for number, line in enumerate(text.splitlines(), start=1):
+            if any(password_values(line)):
+                offences.append(f"{path.relative_to(REPO_ROOT)}:{number}")  # location only, never the value
+    assert not offences, "password settings with a real-looking value:\n" + "\n".join(offences)
+
+
+def test_password_scan_detects_a_value_and_ignores_placeholders():
+    assert list(password_values("DBT_PASSWORD=hunter2")) == ["hunter2"]
+    assert list(password_values("AGENT_PASSWORD=change_me_local_only")) == []
+    assert list(password_values("-v dbt_password='$(DBT_PASSWORD)'")) == []
+    assert list(password_values('POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?required}"')) == []
