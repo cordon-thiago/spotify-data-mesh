@@ -16,7 +16,7 @@ The project owner runs one command that sets up the database layers and the thre
 
 **Why this priority**: It is the checkpoint of the phase and the core guarantee of the project (Principle I). Every later phase, and the whole agent evaluation, relies on it. Nothing else in this phase matters if this fails.
 
-**Independent Test**: With the raw table loaded from the sample data, connect as the agent role and run `SELECT ip_addr FROM raw.spotify_streams`, `SELECT * FROM raw.spotify_streams` and a listing of the tables in `raw` and `staging`. Each read of restricted data fails with a permission error. Connect as the owner and the first query returns rows.
+**Independent Test**: With the raw table loaded from the sample data, connect as the agent role and run `SELECT ip_addr FROM raw.spotify_streams`, `SELECT * FROM raw.spotify_streams` and a read of any table in `staging`. Each read fails with a permission error. Connect as the owner and the first query returns rows.
 
 **Acceptance Scenarios**:
 
@@ -30,11 +30,11 @@ The project owner runs one command that sets up the database layers and the thre
 
 ### User Story 2 - The pipeline role can build the layers and nothing more (Priority: P2)
 
-The transformation tool connects as the dbt role. It reads the raw table, creates and replaces objects in the staging, marts and semantic layers, and can read what it builds. It cannot change or remove the raw table, and it cannot change the roles or their grants.
+The transformation tool connects as the dbt role. It reads the raw table, creates and replaces objects in the staging, marts and semantic layers, and can read what it builds. It cannot change or remove the raw table, it cannot change roles, and it cannot grant access to the raw table or to the layers themselves.
 
 **Why this priority**: Phase 3 starts with the dbt role. Without it, dbt would run as the owner, and the separation between "who builds" and "who owns the source" would be lost before it was ever used.
 
-**Independent Test**: Connected as the dbt role, create a view in staging and a table in marts, read them back, and read the raw table. Then try to delete a raw row, drop the raw table and grant access to the agent role; all three are refused.
+**Independent Test**: Connected as the dbt role, create a view in staging and a table in marts, read them back, and read the raw table. Then try to delete a raw row, drop the raw table and grant the agent role access to the raw table; all three are refused.
 
 **Acceptance Scenarios**:
 
@@ -78,17 +78,17 @@ A contributor with no real data resets the database, runs the setup, loads the s
 1. **Given** a freshly reset database, **When** setup is run and the sample is loaded, **Then** all permission checks pass.
 2. **Given** setup has already been run, **When** it is run again, **Then** it finishes without error and the permissions are the same as after the first run.
 3. **Given** the roles need credentials, **When** setup is run, **Then** passwords come from local settings that are not committed, and the repository contains no password.
-4. **Given** the table for raw data is dropped and recreated (as the raw table script does), **When** setup is run again, **Then** the agent role still cannot read `ip_addr`.
+4. **Given** the table for raw data is dropped and recreated (as the raw table script does), **When** the agent and dbt roles then read it, **Then** the agent is still refused and the dbt role can still read, with no extra step.
 
 ---
 
 ### Edge Cases
 
-- The raw table is recreated after the grants were applied (the table script drops and recreates it): its permissions must not leak to other roles, and setup must be able to restore the dbt role's read access.
+- The raw table is recreated after the grants were applied (the table script drops and recreates it): its permissions must not leak to other roles, and the dbt role must keep read access without a manual step.
 - Someone adds a new column to the raw table in the future: the agent must be refused on it, because the agent has no grant on the raw layer at all, not on a column list that would need updating.
 - The agent role is given access to a staging object by mistake: the permission test must catch it.
 - A role is asked to read a table that does not exist: it must get the normal "does not exist" or permission error, never data.
-- The setup runs before the raw table exists: it must still succeed for the roles and layers, and tell the owner that table-level grants on raw will apply once the table exists.
+- The setup runs before the raw table exists: it must still succeed for the roles and layers, and the dbt role must get read access to the table when it is created later.
 - The contract and the table drift apart (a column added to one only): the comparison check must fail and name the field.
 - A restricted field is mislabeled as internal in the contract: nothing in this phase detects it automatically; this is the purpose of the Phase 4 privacy test, and the limitation is written down.
 
@@ -102,7 +102,7 @@ A contributor with no real data resets the database, runs the setup, loads the s
 - **FR-004**: The `agent` role MUST be refused on the `staging` layer, and MUST be able to read the `marts` and `semantic` layers.
 - **FR-005**: The `agent` role MUST be read-only: it MUST NOT be able to insert, update, delete, truncate, create or drop anything in any layer.
 - **FR-006**: The `dbt` role MUST be able to read the raw table, and MUST be able to create, replace and read objects in the `staging`, `marts` and `semantic` layers.
-- **FR-007**: The `dbt` role MUST NOT be able to modify, truncate or drop the raw table, MUST NOT be able to create objects in the `raw` layer, and MUST NOT be able to change roles or grants.
+- **FR-007**: The `dbt` role MUST NOT be able to modify, truncate or drop the raw table, MUST NOT be able to create objects in the `raw` layer, MUST NOT be able to create or alter roles, and MUST NOT be able to grant access on the raw table or on any layer. It owns the objects it builds, so it can grant on those; the agent's access to them is therefore guarded by the Phase 4 privacy test, not by this phase (see Assumptions).
 - **FR-008**: Objects the `dbt` role creates in `marts` and `semantic` MUST be readable by the `agent` role automatically, without a manual grant per object. Objects it creates in `staging` MUST NOT be.
 - **FR-009**: Nothing outside the three roles MUST have access to any layer: access given to everyone by default MUST be removed from the layers and the database objects this project creates.
 - **FR-010**: Setup MUST be a single command that creates the layers, roles and grants, MUST be safe to run repeatedly, and MUST work on a freshly reset database.
@@ -115,7 +115,7 @@ A contributor with no real data resets the database, runs the setup, loads the s
 - **FR-017**: A repeatable automated check MUST confirm that the contract's field list and types match the raw table, and MUST fail naming the field when they differ.
 - **FR-018**: A repeatable automated check MUST confirm every permission acceptance scenario of Stories 1 and 2, by connecting as each role. It MUST run on the sample data alone.
 - **FR-019**: Setup and checks MUST NOT print, log or commit any real field value; the checks MUST use only counts and error classes.
-- **FR-020**: The raw table script MUST keep the raw table closed to everyone but the owner after it recreates the table, and the documentation MUST say that setup is rerun after it to restore the dbt role's read access.
+- **FR-020**: When the raw table is dropped and recreated (as its table script does), it MUST stay closed to everyone but the owner and the `dbt` role, and the `dbt` role MUST be able to read it again without rerunning setup.
 
 ### Key Entities
 
@@ -139,6 +139,8 @@ A contributor with no real data resets the database, runs the setup, loads the s
 
 - The database runs locally and only the owner (the project's own database user) exists today. `owner` is that user and is not created, only documented and used.
 - The three roles are database login roles, each with its own password from local settings. The `agent` password is never given to any tool except the agent's own connection, which is built in a later phase.
+- The `dbt` role owns the tables and views it builds, as dbt requires, so it can grant on them. This phase cannot prevent that; it guarantees only that `dbt` cannot grant on the raw table or the layers. A curated object that exposes a restricted field is caught by the Phase 4 privacy test.
+- The agent can still see object names, including the name `ip_addr`, in the database's catalog; it cannot read any value. Hiding names is not a goal.
 - Access is granted by layer, not by column: the agent has no grant on `raw` or `staging` at all, so a column added later cannot leak. Column-level grants are not used.
 - Layer names and the roles-to-layers table follow `.claude/plans/business-rules.md` and Principle I of the constitution. The `intermediate` models of the plan live in a dbt folder and, when they need storage, in `staging`; a separate layer for them is not created in this phase.
 - The dbt role reads the raw table because the constitution makes the deduplication step (`int_streams_deduplicated`) the only door from the restricted layer to the marts; that the step drops `ip_addr` is tested in Phases 3 and 4, not here.
