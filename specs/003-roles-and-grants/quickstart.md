@@ -61,3 +61,18 @@ git grep -nE '(DBT|AGENT)_PASSWORD=.+' -- . ':!.env.example'
 ```
 
 Expected: tests pass; the grep finds nothing.
+
+## Checkpoint results
+
+Run 2026-11-15 against the loaded real export (7,922 rows); counts and error classes only.
+
+| Check | Result |
+| --- | --- |
+| As `owner`: `count(ip_addr)` on `raw.spotify_streams` | 7922 |
+| As `agent`: `select ip_addr`, `select *` on raw | `permission denied for schema raw` |
+| As `agent`: read of a staging table | `permission denied for schema staging` |
+| As `dbt`: `delete from` raw | `permission denied for table spotify_streams` |
+| As `dbt`: `drop table` raw | `must be owner of table spotify_streams` |
+| As `dbt`: `count(*)` on raw | 7922 |
+
+Clean setup (`make reset`, `make raw-table`, `make roles`, `make load`, `make test`): 15.9 s, all 144 tests pass (SC-003). A second `make roles` and a `make raw-table` without `make roles` both leave the permission tests green. The real export was reloaded afterwards: 7,922 rows read, 7,922 loaded.

@@ -25,7 +25,7 @@ The permission matrix `sql/roles.sql` must produce and `tests/test_roles_db.py` 
 | Insert, update, delete, truncate on a raw table | allowed | refused | refused |
 | Drop a raw table | allowed | refused | refused |
 | Create any object in raw | allowed | refused | refused |
-| `GRANT SELECT` on a raw table | allowed | refused | refused |
+| `GRANT SELECT` on a raw table to `agent` | allowed | no effect (PostgreSQL may answer with a warning instead of an error) | refused |
 | `CREATE ROLE` | allowed | refused | refused |
 | Create a temporary table | allowed | allowed | refused |
 | Read a raw table after it was dropped and recreated by `owner` | allowed | allowed | refused |
