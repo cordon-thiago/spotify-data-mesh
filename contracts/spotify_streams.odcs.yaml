@@ -1,0 +1,207 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: spotify-streams
+name: spotify_streams
+version: 1.0.0
+status: active
+domain: listening
+description:
+  purpose: >-
+    Source-aligned Spotify streaming history, one row per record of the personal export,
+    kept unchanged. This is the restricted layer of the project.
+  limitations: >-
+    Contains ip_addr, which is restricted personal data. The role agent has no access to this
+    product and the database refuses every read, by permission and not by prompt. The export
+    has no user agent or username field; if a future export adds one, it is restricted by
+    default and must be added here before it is loaded.
+  usage: >-
+    Source of the dbt staging layer (Phase 3). The only way from this product to curated
+    products is the deduplication step that drops ip_addr; tested in Phase 4.
+roles:
+  - role: owner
+    access: write
+    description: Owns the table and the loader writes to it.
+  - role: dbt
+    access: read
+    description: Reads the table to build the staging layer.
+schema:
+  - name: raw.spotify_streams
+    physicalName: raw.spotify_streams
+    physicalType: table
+    description: Streaming history records, one row per export record, unchanged.
+    properties:
+      - name: ts
+        logicalType: timestamp
+        physicalType: timestamp with time zone
+        required: false
+        classification: internal
+        description: >-
+          Instant the stream ended, in UTC. The start of the stream is ts minus ms_played (derived in Phase 3).
+      - name: platform
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Platform the stream was played on, as reported by the export.
+      - name: ms_played
+        logicalType: integer
+        physicalType: integer
+        required: false
+        classification: internal
+        description: >-
+          Milliseconds played in the stream.
+      - name: conn_country
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: confidential
+        description: >-
+          Two-letter code of the country of the connection. Confidential: kept in curated products, shared with care.
+      - name: ip_addr
+        logicalType: string
+        physicalType: inet
+        required: false
+        classification: restricted
+        description: >-
+          IP address of the stream (IPv4 or IPv6). Restricted: a direct identifier and personal data. Readable by the owner and dbt only; never copied to a mart, the semantic layer or the agent.
+      - name: master_metadata_track_name
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Track name. Filled for music streams, otherwise null.
+      - name: master_metadata_album_artist_name
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Artist name. Filled for music streams only; for podcasts it is null, so a podcast never counts as an artist.
+      - name: master_metadata_album_album_name
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Album name. Filled for music streams, otherwise null.
+      - name: spotify_track_uri
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Track URI (spotify:track:...), the natural key of a track. Filled for music streams, otherwise null.
+      - name: episode_name
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Podcast episode name. Filled for podcast streams, otherwise null.
+      - name: episode_show_name
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Podcast show name. Filled for podcast streams, otherwise null; an empty string can occur and is kept distinct from null.
+      - name: spotify_episode_uri
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Episode URI. Filled for podcast streams, otherwise null.
+      - name: audiobook_title
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Audiobook title. Part of the schema; null in the current export.
+      - name: audiobook_uri
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Audiobook URI. Part of the schema; null in the current export.
+      - name: audiobook_chapter_uri
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Audiobook chapter URI. Part of the schema; null in the current export.
+      - name: audiobook_chapter_title
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Audiobook chapter title. Part of the schema; null in the current export.
+      - name: reason_start
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Why the stream started, as reported by the export.
+      - name: reason_end
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Why the stream ended, as reported by the export. Not used to define a completed listen.
+      - name: shuffle
+        logicalType: boolean
+        physicalType: boolean
+        required: false
+        classification: internal
+        description: >-
+          Whether shuffle was on. Nullable: null means unknown, not false.
+      - name: skipped
+        logicalType: boolean
+        physicalType: boolean
+        required: false
+        classification: internal
+        description: >-
+          Whether the stream was skipped. Nullable: null means unknown, not false; null stays out of rate denominators.
+      - name: offline
+        logicalType: boolean
+        physicalType: boolean
+        required: false
+        classification: internal
+        description: >-
+          Whether the stream was played offline. Nullable: null means unknown, not false.
+      - name: offline_timestamp
+        logicalType: integer
+        physicalType: bigint
+        required: false
+        classification: internal
+        description: >-
+          Epoch time of offline use. The export mixes seconds and milliseconds; reading the unit is a staging concern. Audit only, not tied to ts.
+      - name: incognito_mode
+        logicalType: boolean
+        physicalType: boolean
+        required: false
+        classification: internal
+        description: >-
+          Whether the stream was in a private session. Nullable: null means unknown, not false. Rows with true are excluded from curated products by policy (Phase 3).
+      - name: source_file
+        logicalType: string
+        physicalType: text
+        required: false
+        classification: internal
+        description: >-
+          Path of the export file the row was loaded from. Load metadata added by the loader.
+      - name: loaded_at
+        logicalType: timestamp
+        physicalType: timestamp with time zone
+        required: true
+        classification: internal
+        description: >-
+          When the row was loaded. Load metadata filled by the database.
