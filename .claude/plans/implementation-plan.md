@@ -94,7 +94,7 @@ Resolved when the phase that needs them starts.
 ### Phase 2: Roles and base governance (concept: privacy by permission, not by prompt)
 - Postgres roles `owner`, `dbt`, `agent`; schemas `raw`, `staging`, `marts`, `semantic`; GRANTs in `sql/roles.sql`.
 - ODCS contract `contracts/spotify_streams.odcs.yaml` with per-field classification (`ip_addr` = restricted; the real export has no user agent or username field).
-- Checkpoint: as `agent`, `SELECT ip_addr` fails.
+- Checkpoint: as `agent`, `SELECT ip_addr` fails. **Done 2026-11-15** (spec in `specs/003-roles-and-grants/`): as `agent`, `SELECT ip_addr`, `SELECT *` and any read of `raw` or `staging` fail with `permission denied for schema`; `dbt` reads raw (7,922 rows) and cannot delete from or drop it; the contract lists 25 properties (1 restricted, 1 confidential, 23 internal), lints clean and matches the table. Limits found: `dbt` owns what it builds and can grant on it (the Phase 4 privacy test is the guard), and `agent` can see object names, not values, in the catalog.
 
 ### Phase 3: dbt staging + `fct_listens` (concept: dbt layers, tests, business rules)
 - `dbt init`, sources, `stg_spotify__streams.sql` (rename, cast, `ts` is UTC end time → start = end − `ms_played`).

@@ -16,7 +16,7 @@ Only part of the design exists. Diagrams use solid boxes for what is implemented
 | --- | --- | --- |
 | 0 | Foundation: Docker, Postgres, uv, sample data | Done |
 | 1 | Raw ingestion into `raw.spotify_streams` | Done |
-| 2 | Roles, schemas, grants, first contract | Planned |
+| 2 | Roles, schemas, grants, first contract | Done |
 | 3 | dbt staging, deduplication, `fct_listens` | Planned |
 | 4 | Catalog product, contracts as code, privacy CI | Planned |
 | 5 | Eval harness, configuration A | Planned |
@@ -61,7 +61,7 @@ flowchart LR
 | Python 3.12 and uv | Ingestion scripts, sample generator, tests. Dependencies pinned in `pyproject.toml` and `uv.lock`. | Implemented |
 | Make | Single entry point: `up`, `down`, `reset`, `psql`, `sample`, `test`, `raw-table`, `load`, `inspect`. There is no orchestrator. | Implemented |
 | dbt v2 (`dbt-oss`) | Transformations, tests, documentation. Postgres adapter is experimental, see [ADR 0001](0001-dbt-v2-experimental-postgres.md). Run it as `bin/dbt`. | Planned, Phase 3 |
-| ODCS contracts | One YAML contract per data product, checked with the Data Contract CLI. | Planned, Phases 2 and 4 |
+| ODCS contracts | One YAML contract per data product, checked with the Data Contract CLI. `spotify_streams` exists; the others come in Phase 4. | Partly implemented, Phase 2 done |
 | Semantic layer | Governed metrics and dimensions. MetricFlow or Cube, decided in Phase 7. | Planned |
 | Agent | Three configurations over the same model and base prompt. | Planned, Phases 5 to 7 |
 | Eval harness | Frozen questions, reviewed expected SQL, reports. | Planned, Phases 5 to 8 |
@@ -92,10 +92,10 @@ flowchart LR
 | Layer | Schema | Content | Materialization | Status |
 | --- | --- | --- | --- | --- |
 | Raw | `raw` | One row per export record, unchanged, plus `source_file` and `loaded_at`. | Table, replaced on each load | Implemented |
-| Staging | `staging` | Rename and cast. Start time is `ts - ms_played`. Units of `offline_timestamp` are interpreted here. | View | Planned |
+| Staging | `staging` | Rename and cast. Start time is `ts - ms_played`. Units of `offline_timestamp` are interpreted here. | View | Schema created (Phase 2), models in Phase 3 |
 | Intermediate | Decided in Phase 3 | Drops `ip_addr`, removes exact duplicates, excludes incognito rows. | View | Planned |
-| Marts | `marts` | `fct_listens` (`local_date`, `hour_of_day`, `day_of_week` in Europe/Lisbon, `content_type`, `is_completed_listen`) and `dim_listened_catalog` keyed by `spotify_track_uri`. | Table | Planned |
-| Semantic | `semantic` | Metrics: `hours_listened`, `completed_listens`, `skip_rate`, `distinct_artists`, `listens`. | n/a | Planned |
+| Marts | `marts` | `fct_listens` (`local_date`, `hour_of_day`, `day_of_week` in Europe/Lisbon, `content_type`, `is_completed_listen`) and `dim_listened_catalog` keyed by `spotify_track_uri`. | Table | Schema created (Phase 2), models in Phase 3 |
+| Semantic | `semantic` | Metrics: `hours_listened`, `completed_listens`, `skip_rate`, `distinct_artists`, `listens`. | n/a | Schema created (Phase 2), objects in Phase 7 |
 
 Model naming follows dbt conventions: `stg_<source>__<entity>`, `fct_`, `dim_`, one `_<folder>__models.yml` per folder. The planned folder layout is in the implementation plan.
 
@@ -131,7 +131,7 @@ Each product has one ODCS contract in `contracts/`, with a classification on eve
 ```mermaid
 flowchart TD
     src[Spotify export]
-    p1[spotify_streams<br/>source-aligned<br/>Phase 2]:::planned
+    p1[spotify_streams<br/>source-aligned<br/>Phase 2]
     p2[listens<br/>curated<br/>Phase 4]:::planned
     p3[listened_catalog<br/>curated<br/>Phase 4]:::planned
     p4[account data<br/>source-aligned<br/>Phase 9, optional]:::planned
@@ -171,7 +171,7 @@ flowchart LR
 
 | Control | Detail | Status |
 | --- | --- | --- |
-| Roles | `owner` (sees raw), `dbt` (builds), `agent` (reads curated and semantic schemas only). Grants in `sql/roles.sql`. Today only `owner` exists. | Planned, Phase 2 |
+| Roles | `owner` (sees raw), `dbt` (builds), `agent` (reads curated and semantic schemas only). Grants in `sql/roles.sql`, applied with `make roles`. The agent has no grant on `raw` or `staging`. | Implemented, Phase 2 |
 | Row limit and audit log | Every agent query is limited and logged locally (question, generated query, row count). | Planned |
 | Privacy CI | A test fails if any restricted field appears in a mart. | Planned, Phase 4 |
 | Incognito policy | Rows with `incognito_mode = true` are excluded from curated products by default. | Planned, Phase 3 |
@@ -281,11 +281,11 @@ spotify-data-mesh/
   data/             real export, git-ignored (only data/README.md is tracked)
   sample_data/      synthetic generator and committed sample files
   ingest/           inspect_export.py, load.py
-  sql/              raw_spotify_streams.sql (roles.sql comes in Phase 2)
+  sql/              raw_spotify_streams.sql, roles.sql
   tests/            generator, inspector, loader and repo hygiene tests
   docs/             ADRs, findings, this document
-  specs/            Spec Kit artifacts per phase (001, 002)
-  contracts/        empty until Phase 2
+  specs/            Spec Kit artifacts per phase (001, 002, 003)
+  contracts/        spotify_streams.odcs.yaml (listens and listened_catalog come in Phase 4)
   dbt/              empty until Phase 3
   agent/            empty until Phase 5
   eval/             empty until Phase 5

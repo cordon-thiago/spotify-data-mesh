@@ -66,6 +66,16 @@ make load SOURCE=data          # load the real export from the private data/ fol
 
 `make load` prints, per file and in total, the records read, the rows loaded and the `NULL` counts of the four optional boolean fields, then commits only if every figure matches. A load replaces the table content, is all-or-nothing, and never prints field values. See [ingest/README.md](ingest/README.md).
 
+## Roles and permissions
+
+```bash
+make roles                     # create the layers staging, marts, semantic, the roles dbt and agent, and the grants
+make psql-agent                # connect as the agent: SELECT ip_addr is refused
+make lint-contract             # validate the data contract in contracts/
+```
+
+Set `DBT_PASSWORD` and `AGENT_PASSWORD` in `.env` first (see `.env.example`). The agent role has no grant on `raw` or `staging`, so the restriction holds for every query, whatever the prompt says. See [sql/README.md](sql/README.md) and [contracts/README.md](contracts/README.md).
+
 ## Data handling
 
 This repository is public, so what goes into git matters.
@@ -82,7 +92,7 @@ This repository is public, so what goes into git matters.
 
 ## Next phase
 
-Phase 2 adds database roles and grants so the agent can never read restricted fields. See [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md).
+Phase 2b adds the quality gates (pre-commit and CI), then Phase 3 builds the dbt staging layer. See [.claude/plans/implementation-plan.md](.claude/plans/implementation-plan.md).
 
 ## Troubleshooting
 
