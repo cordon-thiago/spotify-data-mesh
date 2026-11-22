@@ -40,7 +40,7 @@ Three Make targets are the one definition of "the checks": `make lint` (file che
 
 ## Consequences
 
-- A commit takes about a second with warm hook environments (0.4 s for docs only, 1.2 s for code and a contract, measured on 2026-11-22). `make pr-check` took 20 s locally. CI time is measured on the first pull request; the target is under 10 minutes.
+- A commit takes about a second with warm hook environments (0.4 s for docs only, 1.2 s for code and a contract, measured on 2026-11-22). `make pr-check` took 20 s locally. The `checks` job on GitHub took 55 s on the first pull request (target: under 10 minutes).
 - Hook versions are pinned in `.pre-commit-config.yaml`; upgrades are deliberate (`pre-commit autoupdate`, then review).
 - The IP rule matches any valid IPv4 address outside the reserved documentation ranges, so a four-part version number would be a false positive; it would get a narrow, reasoned allowance. IPv6 stays covered only by `tests/test_repo_hygiene.py`, on the working tree.
 - `sqlfluff` rule LT01 (spacing) is off, so the aligned column definitions in `sql/raw_spotify_streams.sql` stay readable. Line length is 130 for SQL because of one long string literal.

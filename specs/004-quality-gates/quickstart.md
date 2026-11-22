@@ -57,7 +57,7 @@ Expected: lint, range scan, a throwaway database on port 55432 with generated cr
 
 ## 6. The workflow on a pull request (SC-004, SC-005, SC-006)
 
-1. Push the branch and open a pull request: status `checks` runs and passes in under 10 minutes.
+1. Push the branch and open a pull request: status `checks` runs and passes in under 10 minutes (measured: 55 s).
 2. Push a commit with a deliberately failing test: the status turns red and the log names the failing test. Revert.
 3. Push a commit made with `git commit --no-verify` that has a lint violation: the status is red on `ruff-check`. Revert.
 4. Confirm `.github/workflows/ci.yml` names no individual check (`tests/test_quality_gates.py` also asserts this).
