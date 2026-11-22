@@ -1,0 +1,57 @@
+# The check set for the commit stage (single definition, see specs/004-quality-gates/contracts/check-set.md).
+# Install with `make hooks`. Run over all files with `make lint`. CI runs the same set through `make pr-check`.
+repos:
+  - repo: local
+    hooks:
+      # 1. Refuse forbidden paths whatever their content: the raw export, local settings, keys.
+      #    Works even for `git add -f` past the ignore rule. It prints file names only.
+      - id: path-guard
+        name: path-guard
+        entry: forbidden path staged (raw export, local settings or key); see README, Quality gates
+        language: fail
+        files: '^(data/(?!README\.md$)|\.env$|\.env\.ci$|\.claude/settings\.local\.json$|.*\.(pem|key)$)'
+
+  # 2. Secrets and IP addresses in staged changes. Rules and allowances: .gitleaks.toml.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # 3-4. Merge-conflict markers and files that are too large to be code (a data file with another name).
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+  # 5-6. Python lint and format. Settings: [tool.ruff] in pyproject.toml.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.6
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+
+  # 7. SQL lint. Settings: .sqlfluff.
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 4.5.0
+    hooks:
+      - id: sqlfluff-lint
+        files: ^sql/.*\.sql$
+
+  # 8. YAML lint, only for files the project edits by hand. Settings: .yamllint.yaml.
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: ["-c", ".yamllint.yaml"]
+        files: ^(contracts/|docker-compose\.yml$|\.github/|\.pre-commit-config\.yaml$)
+
+  # 9. Contract validation with the Data Contract CLI (one file at a time).
+  - repo: local
+    hooks:
+      - id: contract-lint
+        name: contract-lint
+        entry: bash -c 'for f in "$@"; do uv run datacontract lint "$f" || exit 1; done' --
+        language: system
+        files: ^contracts/.*\.odcs\.yaml$

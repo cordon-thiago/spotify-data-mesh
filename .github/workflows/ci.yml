@@ -1,0 +1,60 @@
+# Quality gates in CI. The workflow lists no check itself: it installs the tools and runs `make pr-check`,
+# the single definition of "the checks" (see specs/004-quality-gates/contracts/ci-workflow.md).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Read-only token and no repository secret: pull requests from forks work the same way.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: "8.30.1"
+  # SHA-256 of gitleaks_8.30.1_linux_x64.tar.gz, verified against the release checksum file (research.md, D7).
+  GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+
+jobs:
+  # The job id is the status name to require in branch protection.
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Full history: the secret scan reads the commits of the pull request or push.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          enable-cache: true
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: hooks-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Install gitleaks (pinned, checksum verified)
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "${RUNNER_TEMP}/${archive}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/${archive}" | sha256sum -c -
+          mkdir -p "${RUNNER_TEMP}/bin"
+          tar -xzf "${RUNNER_TEMP}/${archive}" -C "${RUNNER_TEMP}/bin" gitleaks
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+
+      - name: Install the project environment
+        run: uv sync
+
+      - name: Run all checks
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: make pr-check BASE="${BASE}" HEAD="${HEAD}"
