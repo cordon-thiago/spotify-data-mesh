@@ -11,7 +11,6 @@ from pathlib import Path
 import psycopg
 import pytest
 import yaml
-
 from test_roles_db import connect, read_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

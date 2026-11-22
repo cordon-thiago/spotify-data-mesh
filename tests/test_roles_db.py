@@ -172,13 +172,16 @@ def test_agent_cannot_create(agent, layer):
     assert refused(agent, f"create view {unique(layer)} as select 1 as x")
 
 
-@pytest.mark.parametrize("statement", [
-    "insert into {t} (conn_country) values ('PT')",
-    "update {t} set conn_country = 'ES'",
-    "delete from {t}",
-    "truncate {t}",
-    "drop table {t}",
-])
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "insert into {t} (conn_country) values ('PT')",
+        "update {t} set conn_country = 'ES'",
+        "delete from {t}",
+        "truncate {t}",
+        "drop table {t}",
+    ],
+)
 def test_agent_cannot_write_raw(agent, raw_table, statement):
     assert refused(agent, statement.format(t=raw_table))
 
@@ -226,13 +229,16 @@ def test_dbt_can_rebuild_a_table(dbt, cleanup):
     assert not refused(dbt, f"select * from {name}")
 
 
-@pytest.mark.parametrize("statement", [
-    "insert into {t} (conn_country) values ('PT')",
-    "update {t} set conn_country = 'ES'",
-    "delete from {t}",
-    "truncate {t}",
-    "drop table {t}",
-])
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "insert into {t} (conn_country) values ('PT')",
+        "update {t} set conn_country = 'ES'",
+        "delete from {t}",
+        "truncate {t}",
+        "drop table {t}",
+    ],
+)
 def test_dbt_cannot_change_raw(dbt, raw_table, statement):
     assert refused(dbt, statement.format(t=raw_table))
 
@@ -311,9 +317,7 @@ def test_setup_is_idempotent(settings, agent, raw_table):
 def test_setup_without_a_password_changes_nothing(settings):
     env = make_env(settings)
     env["DBT_PASSWORD"] = ""
-    result = subprocess.run(
-        ["make", "roles", "DBT_PASSWORD="], cwd=REPO_ROOT, env=env, capture_output=True, text=True
-    )
+    result = subprocess.run(["make", "roles", "DBT_PASSWORD="], cwd=REPO_ROOT, env=env, capture_output=True, text=True)
     assert result.returncode != 0
     assert "DBT_PASSWORD" in result.stdout + result.stderr
     for password in (settings["AGENT_PASSWORD"], settings["POSTGRES_PASSWORD"]):

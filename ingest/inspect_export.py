@@ -86,7 +86,9 @@ def format_file(name, size_mb, count, keys, content):
     ]
     for key, stats in keys.items():
         types = ",".join(sorted(stats["types"]))
-        lines.append(f"  {key.ljust(width)}{str(stats['present']).rjust(8)}  {types.ljust(24)}{str(stats['nulls']).rjust(6)}")
+        lines.append(
+            f"  {key.ljust(width)}{str(stats['present']).rjust(8)}  {types.ljust(24)}{str(stats['nulls']).rjust(6)}"
+        )
     outside = [key for key in keys if key not in EXPECTED_FIELDS]
     absent = [field for field in EXPECTED_FIELDS if field not in keys]
     lines.append(f"  outside the 23 sample fields: {', '.join(outside) or '(none)'}")

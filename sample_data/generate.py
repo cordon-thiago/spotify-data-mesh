@@ -12,7 +12,7 @@ import json
 import random
 import string
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -52,8 +52,8 @@ AUDIO_FILE = "streaming_history_audio_sample.json"
 VIDEO_FILE = "streaming_history_video_sample.json"
 
 # Fixed window, so output never depends on the day the generator runs.
-WINDOW_START = datetime(2024, 1, 1, tzinfo=timezone.utc)
-WINDOW_END = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+WINDOW_START = datetime(2024, 1, 1, tzinfo=UTC)
+WINDOW_END = datetime(2025, 12, 31, 23, 59, 59, tzinfo=UTC)
 LISBON = ZoneInfo("Europe/Lisbon")
 
 # RFC 5737 documentation ranges: cannot belong to a real device.
@@ -133,7 +133,7 @@ def random_ip(rng):
 
 
 def format_ts(moment):
-    return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return moment.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def maybe_null(rng, value):
@@ -163,9 +163,7 @@ def build_record(rng, catalog, kind, ts=None, ms_played=None):
         shuffle=maybe_null(rng, rng.random() < 0.5),
         skipped=maybe_null(rng, skipped),
         offline=maybe_null(rng, rng.random() < OFFLINE_SHARE),
-        offline_timestamp=(
-            None if rng.random() < MISSING_OFFLINE_TIMESTAMP_SHARE else offline_timestamp
-        ),
+        offline_timestamp=(None if rng.random() < MISSING_OFFLINE_TIMESTAMP_SHARE else offline_timestamp),
         incognito_mode=maybe_null(rng, rng.random() < INCOGNITO_SHARE),
     )
     record.update(rng.choice(catalog[kind]))
@@ -190,7 +188,7 @@ def pick_file(rng, kind):
 
 
 def local_to_utc(year, month, day, hour, minute):
-    return datetime(year, month, day, hour, minute, tzinfo=LISBON).astimezone(timezone.utc)
+    return datetime(year, month, day, hour, minute, tzinfo=LISBON).astimezone(UTC)
 
 
 def edge_case_records(rng, catalog):

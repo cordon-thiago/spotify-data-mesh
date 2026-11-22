@@ -62,9 +62,9 @@ def read_records(path, name=None):
         with open(path, encoding="utf-8-sig") as handle:
             data = json.load(handle)
     except json.JSONDecodeError as error:
-        raise IngestError(2, f"error: invalid JSON in {name} at line {error.lineno}, column {error.colno}")
+        raise IngestError(2, f"error: invalid JSON in {name} at line {error.lineno}, column {error.colno}") from None
     except UnicodeDecodeError:
-        raise IngestError(2, f"error: {name} is not valid UTF-8")
+        raise IngestError(2, f"error: {name} is not valid UTF-8") from None
     if not isinstance(data, list) or not all(isinstance(record, dict) for record in data):
         raise IngestError(2, f"error: {name} is not an array of records")
     return data
@@ -149,7 +149,9 @@ def connect():
             connect_timeout=5,
         )
     except psycopg.OperationalError as error:
-        raise IngestError(3, f"error: cannot connect to the database ({type(error).__name__}) - is it running? try make up")
+        raise IngestError(
+            3, f"error: cannot connect to the database ({type(error).__name__}) - is it running? try make up"
+        ) from None
 
 
 def inspect_table(conn, table):
@@ -199,7 +201,7 @@ def load_files(conn, table, source, files, data_columns):
         try:
             cursor.execute(sql.SQL("TRUNCATE {}").format(identifier))
         except psycopg.Error as error:
-            raise IngestError(3, filter_db_error(error, table))
+            raise IngestError(3, filter_db_error(error, table)) from None
         for name in files:
             records = read_records(Path(source) / name, name)
             nulls = dict.fromkeys(boolean_fields, 0)
@@ -213,16 +215,14 @@ def load_files(conn, table, source, files, data_columns):
                     for record in records:
                         copy.write_row([render(record[c]) for c in data_columns] + [name])
             except psycopg.Error as error:
-                raise IngestError(3, filter_db_error(error, name))
+                raise IngestError(3, filter_db_error(error, name)) from None
             counts[name] = {"rows": len(records), "nulls": nulls}
     return counts
 
 
 def table_counts(conn, table, boolean_fields):
     """Rows and NULL counts per source_file, as the table now holds them."""
-    nulls = [
-        sql.SQL("count(*) FILTER (WHERE {} IS NULL)").format(sql.Identifier(field)) for field in boolean_fields
-    ]
+    nulls = [sql.SQL("count(*) FILTER (WHERE {} IS NULL)").format(sql.Identifier(field)) for field in boolean_fields]
     query = sql.SQL("SELECT {source}, count(*){nulls} FROM {table} GROUP BY 1").format(
         source=sql.Identifier(SOURCE_FILE_COLUMN),
         nulls=sql.SQL("").join(sql.SQL(", ") + n for n in nulls),
@@ -231,8 +231,8 @@ def table_counts(conn, table, boolean_fields):
     try:
         rows = conn.execute(query).fetchall()
     except psycopg.Error as error:
-        raise IngestError(3, filter_db_error(error, table))
-    return {row[0]: {"rows": row[1], "nulls": dict(zip(boolean_fields, row[2:]))} for row in rows}
+        raise IngestError(3, filter_db_error(error, table)) from None
+    return {row[0]: {"rows": row[1], "nulls": dict(zip(boolean_fields, row[2:], strict=False))} for row in rows}
 
 
 def format_report(source, table, files, ignored, read, loaded, result):

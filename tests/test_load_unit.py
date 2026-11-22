@@ -4,7 +4,6 @@ import re
 from types import SimpleNamespace
 
 import pytest
-
 from load import (
     BOOLEAN_FIELDS,
     IngestError,
@@ -149,7 +148,9 @@ class InvalidTextRepresentation(Exception):
 def test_filter_db_error_names_file_class_state_line_and_column_but_not_the_value():
     error = InvalidTextRepresentation('COPY t, line 7, column ms_played: "SECRETVALUE"')
     text = filter_db_error(error, "f.json")
-    assert text == "error: database error in f.json: InvalidTextRepresentation (SQLSTATE 22P02), line 7, column ms_played"
+    assert (
+        text == "error: database error in f.json: InvalidTextRepresentation (SQLSTATE 22P02), line 7, column ms_played"
+    )
     assert "SECRETVALUE" not in text
 
 
