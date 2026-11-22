@@ -96,6 +96,13 @@ Resolved when the phase that needs them starts.
 - ODCS contract `contracts/spotify_streams.odcs.yaml` with per-field classification (`ip_addr` = restricted; the real export has no user agent or username field).
 - Checkpoint: as `agent`, `SELECT ip_addr` fails. **Done 2026-11-15** (spec in `specs/003-roles-and-grants/`): as `agent`, `SELECT ip_addr`, `SELECT *` and any read of `raw` or `staging` fail with `permission denied for schema`; `dbt` reads raw (7,922 rows) and cannot delete from or drop it; the contract lists 25 properties (1 restricted, 1 confidential, 23 internal), lints clean and matches the table. Limits found: `dbt` owns what it builds and can grant on it (the Phase 4 privacy test is the guard), and `agent` can see object names, not values, in the catalog.
 
+### Phase 2b: Quality gates (concept: automated checks before and after commit)
+- Pre-commit (`.pre-commit-config.yaml`): ruff (lint + format) for Python, SQL lint for `sql/`, YAML lint for contracts and compose, `datacontract lint` on `contracts/*.odcs.yaml`, secret scan (blocks `.env` and anything under `data/`).
+- CI (`.github/workflows/ci.yml`): on every PR and push to `main`, runs the same hooks, then starts Postgres from `docker-compose.yml` on `sample_data/`, applies `sql/`, and runs `make test`. Never touches the real export.
+- `make` targets: `lint` (all hooks) and `ci` (what the workflow runs), so local and CI behave the same.
+- Out of scope: the "restricted field in marts" test (Phase 4) and dbt checks (Phase 3 adds `dbt build` to CI once it exists).
+- Checkpoint: a commit with a bad contract or a staged `.env` is blocked locally; a PR with a failing test shows a red check.
+
 ### Phase 3: dbt staging + `fct_listens` (concept: dbt layers, tests, business rules)
 - `dbt init`, sources, `stg_spotify__streams.sql` (rename, cast, `ts` is UTC end time → start = end − `ms_played`).
 - `int_streams_deduplicated.sql`: drops `ip_addr` (the only door from restricted to marts), dedups, excludes incognito.
