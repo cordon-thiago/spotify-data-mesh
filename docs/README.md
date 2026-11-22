@@ -5,6 +5,7 @@ Architecture Decision Records (ADRs). Significant decisions are recorded here, a
 | ADR | Decision |
 | --- | --- |
 | [0001](0001-dbt-v2-experimental-postgres.md) | Use dbt v2 with the experimental Postgres adapter |
+| [0002](0002-quality-gates-tooling.md) | Quality gates with pre-commit, gitleaks, ruff, sqlfluff and GitHub Actions |
 
 ## Other documents
 
