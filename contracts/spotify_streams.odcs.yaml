@@ -64,7 +64,8 @@ schema:
         required: false
         classification: restricted
         description: >-
-          IP address of the stream (IPv4 or IPv6). Restricted: a direct identifier and personal data. Readable by the owner and dbt only; never copied to a mart, the semantic layer or the agent.
+          IP address of the stream (IPv4 or IPv6). Restricted: a direct identifier and personal data. Readable
+          by the owner and dbt only; never copied to a mart, the semantic layer or the agent.
       - name: master_metadata_track_name
         logicalType: string
         physicalType: text
@@ -106,7 +107,8 @@ schema:
         required: false
         classification: internal
         description: >-
-          Podcast show name. Filled for podcast streams, otherwise null; an empty string can occur and is kept distinct from null.
+          Podcast show name. Filled for podcast streams, otherwise null; an empty string can occur and is kept
+          distinct from null.
       - name: spotify_episode_uri
         logicalType: string
         physicalType: text
@@ -183,14 +185,16 @@ schema:
         required: false
         classification: internal
         description: >-
-          Epoch time of offline use. The export mixes seconds and milliseconds; reading the unit is a staging concern. Audit only, not tied to ts.
+          Epoch time of offline use. The export mixes seconds and milliseconds; reading the unit is a staging
+          concern. Audit only, not tied to ts.
       - name: incognito_mode
         logicalType: boolean
         physicalType: boolean
         required: false
         classification: internal
         description: >-
-          Whether the stream was in a private session. Nullable: null means unknown, not false. Rows with true are excluded from curated products by policy (Phase 3).
+          Whether the stream was in a private session. Nullable: null means unknown, not false. Rows with true
+          are excluded from curated products by policy (Phase 3).
       - name: source_file
         logicalType: string
         physicalType: text

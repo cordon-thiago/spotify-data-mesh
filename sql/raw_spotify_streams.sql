@@ -67,6 +67,6 @@ CREATE TABLE raw.spotify_streams (
 );
 
 COMMENT ON TABLE raw.spotify_streams IS
-    'Source-aligned Spotify streaming history, one row per export record, unchanged. Restricted: contains ip_addr.';
+'Source-aligned Spotify streaming history, one row per export record, unchanged. Restricted: contains ip_addr.';
 COMMENT ON COLUMN raw.spotify_streams.ip_addr IS 'Restricted personal data (direct identifier). Never exposed to the agent.';
 COMMENT ON COLUMN raw.spotify_streams.source_file IS 'Path of the export file this row was loaded from.';

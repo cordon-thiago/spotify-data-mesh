@@ -9,7 +9,7 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -98,7 +98,7 @@ def groups_filled(record):
 
 
 def parse_ts(value):
-    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
 
 
 def test_every_record_has_the_23_keys_in_order(dataset):
@@ -126,8 +126,8 @@ def test_content_type_does_not_follow_the_file_name(dataset):
 
 
 def test_value_rules(dataset):
-    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
-    end = datetime(2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+    start = datetime(2024, 1, 1, tzinfo=UTC)
+    end = datetime(2025, 12, 31, 23, 59, 59, tzinfo=UTC)
     for record in dataset["all"]:
         assert type(record["ms_played"]) is int and record["ms_played"] > 0
         assert start <= parse_ts(record["ts"]) <= end

@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from generate import FIELDS
 from inspect_export import EXPECTED_FIELDS
 
@@ -46,7 +45,7 @@ def file_section(output, name):
 
 
 def key_line(section, key):
-    line = next(l for l in section.splitlines() if l.split()[:1] == [key])
+    line = next(text for text in section.splitlines() if text.split()[:1] == [key])
     present, types, nulls = line.split()[1:4]
     return int(present), types.split(","), int(nulls)
 

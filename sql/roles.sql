@@ -24,9 +24,15 @@ CREATE SCHEMA IF NOT EXISTS semantic;
 -- Roles. CREATE ROLE has no IF NOT EXISTS, so create only when missing (\gexec runs the
 -- generated statement), then set the attributes and password on every run.
 SELECT 'CREATE ROLE dbt LOGIN'
-WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'dbt') \gexec
+WHERE NOT EXISTS (
+    SELECT FROM pg_roles
+    WHERE rolname = 'dbt'
+) \gexec
 SELECT 'CREATE ROLE agent LOGIN'
-WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'agent') \gexec
+WHERE NOT EXISTS (
+    SELECT FROM pg_roles
+    WHERE rolname = 'agent'
+) \gexec
 
 ALTER ROLE dbt   LOGIN PASSWORD :'dbt_password'   NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
 ALTER ROLE agent LOGIN PASSWORD :'agent_password' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
@@ -71,5 +77,6 @@ SELECT 'layer ' || schema_name AS ensured
 FROM information_schema.schemata
 WHERE schema_name IN ('raw', 'staging', 'marts', 'semantic')
 UNION ALL
-SELECT 'role ' || rolname FROM pg_roles WHERE rolname IN ('dbt', 'agent')
+SELECT 'role ' || rolname FROM pg_roles
+WHERE rolname IN ('dbt', 'agent')
 ORDER BY 1;

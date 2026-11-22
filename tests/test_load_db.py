@@ -16,7 +16,6 @@ from pathlib import Path
 
 import psycopg
 import pytest
-
 from generate import FIELDS
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -134,7 +133,7 @@ def table_counts(db, table):
     rows = db.execute(
         f'SELECT source_file, count(*), {nulls} FROM "{schema}"."{name}" GROUP BY 1 ORDER BY 1'
     ).fetchall()
-    return {r[0]: {"rows": r[1], "nulls": dict(zip(BOOLEANS, r[2:]))} for r in rows}
+    return {r[0]: {"rows": r[1], "nulls": dict(zip(BOOLEANS, r[2:], strict=False))} for r in rows}
 
 
 def total_rows(db, table):
@@ -166,7 +165,9 @@ def test_null_booleans_stay_null_and_are_counted(db, settings, make_table, sampl
         in_table = db.execute(f'SELECT count(*) FROM "{schema}"."{name}" WHERE "{field}" IS NULL').fetchone()[0]
         assert in_table == sum(c["nulls"][field] for c in expected.values())
         # A null must not have turned into false or an empty string.
-        falses = db.execute(f"SELECT count(*) FROM \"{schema}\".\"{name}\" WHERE \"{field}\" IN ('false', '')").fetchone()[0]
+        falses = db.execute(
+            f'SELECT count(*) FROM "{schema}"."{name}" WHERE "{field}" IN (\'false\', \'\')'
+        ).fetchone()[0]
         source_falses = sum(
             1
             for path in Path(sample_dir).rglob("*.json")
@@ -181,9 +182,7 @@ def test_duplicate_records_are_loaded_as_they_are(db, settings, make_table, samp
     assert run_load(settings, table, sample_dir).returncode == 0
     schema, name = table.split(".")
     columns = ", ".join(f'"{f}"' for f in FIELDS)
-    distinct = db.execute(
-        f'SELECT count(*) FROM (SELECT DISTINCT {columns} FROM "{schema}"."{name}") d'
-    ).fetchone()[0]
+    distinct = db.execute(f'SELECT count(*) FROM (SELECT DISTINCT {columns} FROM "{schema}"."{name}") d').fetchone()[0]
     assert distinct <= total_rows(db, table) - 3
 
 
