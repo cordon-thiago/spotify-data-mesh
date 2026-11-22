@@ -10,7 +10,7 @@ Synthetic streaming history with the same 23-field schema as the real Spotify ex
 | `streaming_history_video_sample.json` | Mostly podcast episodes, a little music |
 | `generate.py` | The generator that writes both files |
 
-As in the real export, **content type does not follow the file name**: episodes also appear in the audio file and music in the video file ([findings](../docs/real-export-findings.md)). Real file names differ (`Streaming_History_Audio_<year>.json`); the loader's rule matches both.
+As in the real export, **content type does not follow the file name**: episodes also appear in the audio file and music in the video file ([findings](../docs/reference/real-export-findings.md)). Real file names differ (`Streaming_History_Audio_<year>.json`); the loader's rule matches both.
 
 ## Regenerate
 

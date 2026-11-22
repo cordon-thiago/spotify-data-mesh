@@ -53,7 +53,7 @@ spotify-data-mesh/
     expected/
     run.py
     reports/
-  docs/                                  # ADRs
+  docs/                                  # adr/ guides/ reference/
 ```
 
 - Naming used in the original design, translated:
@@ -80,7 +80,7 @@ Resolved when the phase that needs them starts.
 
 ### Phase 0: Foundation (concept: reproducible environment)
 - Folder structure from the Conventions section; `git init`; `.gitignore` with `data/`; English README.
-- `docker-compose.yml` with Postgres; Python venv; `dbt-oss` (dbt v2, Postgres adapter experimental, see `docs/0001-dbt-v2-experimental-postgres.md`).
+- `docker-compose.yml` with Postgres; Python venv; `dbt-oss` (dbt v2, Postgres adapter experimental, see `docs/adr/0001-dbt-v2-experimental-postgres.md`).
 - `sample_data/`: synthetic generator with the 23 export fields (also the pipeline test fixture).
 - Learn: why raw data stays out of git; Docker/Postgres basics.
 - Checkpoint: `docker compose up` and `psql` connect; sample data generated. **Done 2026-10-26** (spec in `specs/001-local-dev-foundation/`): `make up` healthy in 6.7 s, data survives a restart, `make reset` cleans it, `make sample` writes 2000 records in 0.13 s with identical output on rerun, 35 tests pass.
@@ -89,7 +89,7 @@ Resolved when the phase that needs them starts.
 - Inspect the real ZIP (file names and schema); adjust contract if it differs from the README. Real samples show 23 fields (adds four `audiobook_*` fields; `ip_addr`; no `user_agent_decrypted` or `username`) and podcast episodes in the "video" file; confirm which files hold which content types.
 - `ingest/load.py`: flatten JSON → CSV → `COPY` into restricted `raw.spotify_streams`.
 - ✍️ Write the DDL column list and types.
-- Checkpoint: JSON row count equals table row count; check `null` in boolean fields. **Done 2026-10-26** (spec in `specs/002-raw-ingestion/`): 7,922 real records = 7,922 rows, per file and in total; `NULL` booleans equal on both sides (`offline` 262); reload leaves the same rows; loads in 0.4 s. Findings: `docs/real-export-findings.md`.
+- Checkpoint: JSON row count equals table row count; check `null` in boolean fields. **Done 2026-10-26** (spec in `specs/002-raw-ingestion/`): 7,922 real records = 7,922 rows, per file and in total; `NULL` booleans equal on both sides (`offline` 262); reload leaves the same rows; loads in 0.4 s. Findings: `docs/reference/real-export-findings.md`.
 
 ### Phase 2: Roles and base governance (concept: privacy by permission, not by prompt)
 - Postgres roles `owner`, `dbt`, `agent`; schemas `raw`, `staging`, `marts`, `semantic`; GRANTs in `sql/roles.sql`.
@@ -99,7 +99,7 @@ Resolved when the phase that needs them starts.
 ### Phase 2b: Quality gates (concept: automated checks before and after commit)
 - Pre-commit (`.pre-commit-config.yaml`): path guard (no `data/`, no local settings, no key files, even with `git add -f`), gitleaks on staged changes (secrets and IPv4 addresses outside the reserved ranges), ruff (lint + format) for Python, sqlfluff for `sql/`, yamllint for contracts, compose and the workflow, and `datacontract lint` on `contracts/*.odcs.yaml`.
 - CI (`.github/workflows/ci.yml`): one job `checks` on every PR and push to `main`; it installs the tools and runs `make pr-check`: the file checks over the whole repository, a gitleaks scan of the commits of the PR, then a throwaway Postgres (compose project `smesh-ci`) on `sample_data/` with `sql/` applied and the full test suite. Never touches the real export or the owner's database.
-- `make` targets: `hooks` (install), `lint` (file checks), `scan` (secrets and IPs over a commit range) and `pr-check` (everything the workflow runs), so local and CI behave the same. Tool choices: [ADR 0002](../../docs/0002-quality-gates-tooling.md).
+- `make` targets: `hooks` (install), `lint` (file checks), `scan` (secrets and IPs over a commit range) and `pr-check` (everything the workflow runs), so local and CI behave the same. Tool choices: [ADR 0002](../../docs/adr/0002-quality-gates-tooling.md).
 - Out of scope: the "restricted field in marts" test (Phase 4) and dbt checks (Phase 3 adds `dbt build` to CI once it exists).
 - Checkpoint: a commit with a bad contract or a staged `.env` is blocked locally; a PR with a failing test shows a red check. **Implemented 2026-11-22** (spec in `specs/004-quality-gates/`): refused locally were a staged `data/` file, a fake token, a public IPv4 address, an invalid contract, an unused import, a long SQL line and a malformed YAML (no value printed); a documentation-range address passes. The history audit of 29 commits found 0 secrets and 0 real IP addresses ([history-audit.md](../../specs/004-quality-gates/history-audit.md)). A commit takes 0.4 s (docs) to 1.2 s (code and contract); `make pr-check` takes 20 s with 155 tests and leaves the owner's database untouched. In CI (PR #4) the `checks` status passed in 55 s; on a temporary PR a deliberately failing test turned it red with the test named, and a `--no-verify` commit with an unused import was caught by `ruff check`.
 
@@ -135,7 +135,7 @@ Resolved when the phase that needs them starts.
 
 ### Phase 8: Final eval and report (concept: honest evaluation)
 - 40+ frozen questions; run A, B, C; measure numeric accuracy, definition adherence, correct refusal, tokens, latency.
-- Report states the single-user limitation. ADRs in `docs/`.
+- Report states the single-user limitation. ADRs in `docs/adr/`.
 - Checkpoint: `python eval/run.py --config A|B|C` reproduces everything; hypothesis A < B < C confirmed or refuted.
 
 ### Phase 9 (optional): account data and article

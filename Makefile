@@ -8,7 +8,7 @@ ENV_FILE ?= .env
 -include $(ENV_FILE)
 export
 
-# dbt v2 loads the Postgres adapter only with this flag (see docs/0001-dbt-v2-experimental-postgres.md).
+# dbt v2 loads the Postgres adapter only with this flag (see docs/adr/0001-dbt-v2-experimental-postgres.md).
 export DBT_ALLOW_EXPERIMENTAL_ADAPTERS := true
 
 help: ## Show this help

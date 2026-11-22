@@ -1,6 +1,6 @@
 # Architecture
 
-How the project fits together: components, data flow, governance and the plan to evaluate an AI agent on top of it. Decisions are recorded as ADRs (see [README.md](README.md)); the phased plan is in [.claude/plans/implementation-plan.md](../.claude/plans/implementation-plan.md) and the business rules in [.claude/plans/business-rules.md](../.claude/plans/business-rules.md).
+How the project fits together: components, data flow, governance and the plan to evaluate an AI agent on top of it. Decisions are recorded as ADRs (see [README.md](../README.md)); the phased plan is in [.claude/plans/implementation-plan.md](../../.claude/plans/implementation-plan.md) and the business rules in [.claude/plans/business-rules.md](../../.claude/plans/business-rules.md).
 
 ## Purpose
 
@@ -60,7 +60,7 @@ flowchart LR
 | Postgres 16 | Warehouse. Docker service `db`, bound to `127.0.0.1` only, data in volume `pgdata`. | Implemented |
 | Python 3.12 and uv | Ingestion scripts, sample generator, tests. Dependencies pinned in `pyproject.toml` and `uv.lock`. | Implemented |
 | Make | Single entry point: `up`, `down`, `reset`, `psql`, `sample`, `test`, `raw-table`, `load`, `inspect`. There is no orchestrator. | Implemented |
-| dbt v2 (`dbt-oss`) | Transformations, tests, documentation. Postgres adapter is experimental, see [ADR 0001](0001-dbt-v2-experimental-postgres.md). Run it as `bin/dbt`. | Planned, Phase 3 |
+| dbt v2 (`dbt-oss`) | Transformations, tests, documentation. Postgres adapter is experimental, see [ADR 0001](../adr/0001-dbt-v2-experimental-postgres.md). Run it as `bin/dbt`. | Planned, Phase 3 |
 | ODCS contracts | One YAML contract per data product, checked with the Data Contract CLI. `spotify_streams` exists; the others come in Phase 4. | Partly implemented, Phase 2 done |
 | Semantic layer | Governed metrics and dimensions. MetricFlow or Cube, decided in Phase 7. | Planned |
 | Agent | Three configurations over the same model and base prompt. | Planned, Phases 5 to 7 |
@@ -217,7 +217,7 @@ sequenceDiagram
 | Item | Detail |
 | --- | --- |
 | Inspection | `make inspect SOURCE=data` prints structure, counts and types without values and without a database. |
-| Table definition | [sql/raw_spotify_streams.sql](../sql/raw_spotify_streams.sql). The loader never creates or alters the table. |
+| Table definition | [sql/raw_spotify_streams.sql](../../sql/raw_spotify_streams.sql). The loader never creates or alters the table. |
 | Loading | Rows are streamed with `COPY`, one file at a time. Nothing is written to disk. A load replaces the table content. |
 | Exit codes | 0 ok, 1 counts differ, 2 bad input or configuration, 3 database error. |
 | Sample data | `make sample` writes a deterministic synthetic dataset with the same schema and the known edge cases. The whole pipeline must run on it without the real export. |
@@ -283,7 +283,7 @@ spotify-data-mesh/
   ingest/           inspect_export.py, load.py
   sql/              raw_spotify_streams.sql, roles.sql
   tests/            generator, inspector, loader and repo hygiene tests
-  docs/             ADRs, findings, this document
+  docs/             adr/ (decisions), guides/, reference/ (this document, findings)
   specs/            Spec Kit artifacts per phase (001, 002, 003)
   contracts/        spotify_streams.odcs.yaml (listens and listened_catalog come in Phase 4)
   dbt/              empty until Phase 3

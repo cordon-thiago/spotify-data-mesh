@@ -1,6 +1,6 @@
 # Real export findings
 
-What the real Spotify extended streaming history export looks like, found by running `make inspect SOURCE=data` and a structure-only check on 2026-10-26. This document holds **structure and counts only**: no track, artist, episode or show names, no IP addresses, no dates of listening. Specification: [specs/002-raw-ingestion/](../specs/002-raw-ingestion/).
+What the real Spotify extended streaming history export looks like, found by running `make inspect SOURCE=data` and a structure-only check on 2026-10-26. This document holds **structure and counts only**: no track, artist, episode or show names, no IP addresses, no dates of listening. Specification: [specs/002-raw-ingestion/](../../specs/002-raw-ingestion/).
 
 ## Files
 
