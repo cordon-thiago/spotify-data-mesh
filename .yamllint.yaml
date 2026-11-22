@@ -1,0 +1,11 @@
+# YAML lint settings (check "yamllint" in .pre-commit-config.yaml).
+extends: default
+
+rules:
+  line-length:
+    max: 120
+  # Compose and workflow files do not start with "---" in this project.
+  document-start: disable
+  # GitHub Actions uses the key "on"; do not read it as a boolean.
+  truthy:
+    check-keys: false

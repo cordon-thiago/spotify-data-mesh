@@ -1,0 +1,21 @@
+# SQL lint settings (check "sqlfluff-lint" in .pre-commit-config.yaml).
+[sqlfluff]
+dialect = postgres
+# sql/roles.sql uses psql variables such as :'dbt_password'; the placeholder templater lets the parser read them.
+templater = placeholder
+max_line_length = 130
+# LT01 (spacing) is off: column definitions in sql/raw_spotify_streams.sql are aligned on purpose, for reading.
+exclude_rules = LT01
+
+[sqlfluff:templater:placeholder]
+param_style = colon_optional_quotes
+dbt_password = x
+agent_password = x
+
+# PUBLIC (the pseudo-role) and CURRENT_USER stay upper case: "FROM public" next to "SCHEMA public" is easy to misread.
+[sqlfluff:rules:capitalisation.identifiers]
+ignore_words = PUBLIC,CURRENT_USER
+
+# "offline" is a field name from the Spotify export, kept as the column name.
+[sqlfluff:rules:references.keywords]
+ignore_words = offline

@@ -11,8 +11,18 @@ dependencies = [
 [dependency-groups]
 dev = [
     "datacontract-cli>=1.2.10",
+    "pre-commit==4.7.0",
     "pytest==9.1.1",
 ]
 
 [tool.uv]
 package = false
+
+# Lint and format settings; the ruff hook in .pre-commit-config.yaml reads them from here.
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/F: errors and pyflakes, I: import order, UP: modernization, B: bugbear
+select = ["E", "F", "I", "UP", "B"]

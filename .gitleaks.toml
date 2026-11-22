@@ -1,0 +1,30 @@
+# Secret and IP-address scan settings (hook "gitleaks" and make scan). See contracts/check-set.md.
+title = "spotify-data-mesh"
+
+[extend]
+# Keep gitleaks' own rules for keys, tokens and passwords.
+useDefault = true
+
+# Allowance 1: the documented placeholder password in .env.example and in the docs. It is not a secret.
+[[allowlists]]
+description = "documented placeholder in .env.example and docs, not a secret"
+regexes = ['''change_me_local_only''']
+
+# Rule: an IPv4 address outside the reserved ranges is personal data (ip_addr is restricted, constitution I and V).
+# Valid octets only (0-255, no leading zero), so the documented mask 00.000.000.000 is not read as an address.
+# The same set of allowed ranges as tests/test_repo_hygiene.py. IPv6 is covered only by that test.
+[[rules]]
+id = "ip-address"
+description = "IPv4 address outside the reserved documentation ranges"
+regex = '''\b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\b'''
+keywords = ["."]
+
+[[rules.allowlists]]
+description = "RFC 5737 documentation ranges, loopback and the unspecified address"
+regexes = [
+    '''^192\.0\.2\.''',
+    '''^198\.51\.100\.''',
+    '''^203\.0\.113\.''',
+    '''^127\.''',
+    '''^0\.0\.0\.0$''',
+]
