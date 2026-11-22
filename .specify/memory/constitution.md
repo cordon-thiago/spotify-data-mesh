@@ -55,7 +55,7 @@ Rationale: the project exists to learn data mesh practice; speed is secondary to
 ## Technology and Repository Constraints
 
 - Stack: Postgres (local, Docker), dbt v2 (open-source `dbt-oss`; its Postgres adapter is
-  experimental, see `docs/0001-dbt-v2-experimental-postgres.md`), ODCS contracts with the Data
+  experimental, see `docs/adr/0001-dbt-v2-experimental-postgres.md`), ODCS contracts with the Data
   Contract CLI, Python for ingestion, agent and eval. The semantic layer is MetricFlow or Cube,
   decided at the start of Phase 7.
 - Everything in the repository MUST be in English: identifiers, files, branches, commits,
@@ -70,7 +70,7 @@ Rationale: the project exists to learn data mesh practice; speed is secondary to
 - A change is done only when `dbt build` passes and contract and privacy tests pass.
 - Before each commit, verify that no file from `data/` or restricted field values are staged.
 - Significant decisions (semantic layer tool, LLM local vs API, incognito policy, completed
-  listen threshold) MUST be recorded as an ADR in `docs/`.
+  listen threshold) MUST be recorded as an ADR in `docs/adr/`.
 - Features follow the Spec Kit flow: specify → plan → tasks → implement, checked against this
   constitution at the plan step.
 

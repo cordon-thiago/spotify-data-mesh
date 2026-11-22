@@ -8,7 +8,7 @@
 
 The repository is public and the real Spotify export holds personal data (an IP address and a detailed listening record). The constitution says "before each commit, verify that no file from `data/` or restricted field values are staged" and "secrets MUST NOT be committed". Until Phase 2 that depended on remembering to run `make test` before a push, and the hygiene test reads the working tree, not git history.
 
-Phase 2b makes these rules automatic: checks before each commit, and the same checks again on every pull request, which cannot be skipped. Details: [specs/004-quality-gates/](../specs/004-quality-gates/).
+Phase 2b makes these rules automatic: checks before each commit, and the same checks again on every pull request, which cannot be skipped. Details: [specs/004-quality-gates/](../../specs/004-quality-gates/).
 
 ## Decision
 

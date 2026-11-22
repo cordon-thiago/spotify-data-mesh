@@ -5,7 +5,7 @@
 -- The loader (ingest/load.py) empties and refills this table; it never creates or alters it.
 --
 -- Column names are exactly the JSON keys. Types follow what the real export contains
--- (docs/real-export-findings.md), so a value that does not fit fails the load loudly
+-- (docs/reference/real-export-findings.md), so a value that does not fit fails the load loudly
 -- instead of being stored wrong. There are no NOT NULL or CHECK constraints on purpose:
 -- raw data accepts what arrives, and quality tests belong to Phase 3.
 --
